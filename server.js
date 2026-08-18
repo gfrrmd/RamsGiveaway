@@ -20,7 +20,7 @@ const AC = {
     MAX_SCORE_PER_MINUTE : 400,
     VELOCITY_WINDOW_MS   : 60000,
     MAX_STRIKES          : 3,
-    BAN_DURATION_MS      : 300000,
+    BAN_DURATION_MS      : 3000,  // 3 detik
 };
 
 const userSyncData = {};
