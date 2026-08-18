@@ -9,490 +9,703 @@
         :root {
             --primary: #007aff;
             --bg-dark: #09090b;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255,255,255,0.05);
+            --glass-border: rgba(255,255,255,0.1);
             --text: #ffffff;
             --text-muted: #8e8e93;
-            --app-height: var(--tg-viewport-stable-height, 100vh); 
+            --app-height: var(--tg-viewport-stable-height, 100vh);
         }
-
+        * { -webkit-tap-highlight-color: transparent; }
         body {
             background-color: var(--bg-dark); color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0; padding: 0; height: var(--app-height); width: 100vw; overflow: hidden; touch-action: none; display: flex; flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0; padding: 0; height: var(--app-height); width: 100vw;
+            overflow: hidden; touch-action: none; display: flex; flex-direction: column;
         }
-
         .screen { display: none; flex-direction: column; align-items: center; padding: 20px; height: 100%; box-sizing: border-box; overflow-y: auto; padding-bottom: 100px; }
-        .screen.active { display: flex; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .screen.active { display: flex; animation: fadeIn 0.35s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
         .glass {
             background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 20px; 
-            padding: 20px; width: 100%; max-width: 500px; box-sizing: border-box; 
-            margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 20px; width: 100%; max-width: 500px; box-sizing: border-box;
+            margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
 
-        .login-btn, .claim-btn {
+        /* ---- LOGIN ---- */
+        .login-btn {
             background: linear-gradient(135deg, #007aff, #005bb5); border: none; border-radius: 16px; padding: 18px;
             color: white; font-size: 1.1rem; font-weight: bold; width: 100%; max-width: 320px; margin-top: 20px;
-            box-shadow: 0 10px 20px rgba(0,122,255,0.3); cursor: pointer; transition: 0.2s;
+            box-shadow: 0 10px 20px rgba(0,122,255,0.3); cursor: pointer; transition: transform 0.15s;
         }
-        .claim-btn { background: linear-gradient(135deg, #34c759, #28a745); box-shadow: 0 10px 20px rgba(40,167,69,0.3); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        .login-btn:active, .claim-btn:active { transform: scale(0.95); }
-        
-        .score-val { font-size: clamp(3rem, 10vw, 4.5rem); font-weight: 900; background: linear-gradient(to bottom, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;}
-        .rank-badge { background: rgba(0,122,255,0.15); border: 1px solid rgba(0,122,255,0.3); color: #007aff; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; display: inline-block; margin-bottom: 10px;}
-        
+        .login-btn:active { transform: scale(0.96); }
+
+        /* ---- SCORE CARD ---- */
+        .score-card {
+            background: linear-gradient(145deg, #0f0f13, #1a1a22);
+            border: 1px solid rgba(255,159,10,0.2);
+            border-radius: 28px; padding: 24px 20px;
+            text-align: center; width: 100%; max-width: 500px;
+            box-sizing: border-box; margin-bottom: 15px;
+            box-shadow: 0 0 40px rgba(255,159,10,0.08), 0 8px 30px rgba(0,0,0,0.6);
+            position: relative; overflow: hidden;
+        }
+        .score-card::before {
+            content: ''; position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 200px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,69,58,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .score-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 4px; }
+        .score-val {
+            font-size: clamp(3.2rem, 12vw, 5rem); font-weight: 900; line-height: 1;
+            background: linear-gradient(160deg, #ffffff 0%, #ff9f0a 60%, #ff453a 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 12px; letter-spacing: -2px;
+        }
+        .rank-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(0,122,255,0.12); border: 1px solid rgba(0,122,255,0.25);
+            color: #5ac8fa; padding: 6px 16px; border-radius: 30px;
+            font-size: 0.85rem; font-weight: 700; margin-bottom: 12px;
+        }
+        .session-timer-pill {
+            display: inline-block; font-size: 0.85rem; font-weight: 700;
+            color: #ff9f0a; background: rgba(255,159,10,0.1);
+            border: 1px solid rgba(255,159,10,0.2);
+            padding: 7px 18px; border-radius: 30px;
+        }
+        .session-timer-pill.inactive { color: #ff453a; background: rgba(255,69,58,0.1); border-color: rgba(255,69,58,0.2); }
+
+        /* ---- WINNER / LOSER BANNERS ---- */
+        .claim-btn {
+            background: linear-gradient(135deg, #34c759, #28a745); border: none; border-radius: 14px; padding: 16px;
+            color: white; font-size: 1rem; font-weight: bold; width: 100%; margin-top: 12px;
+            box-shadow: 0 8px 20px rgba(40,167,69,0.35); cursor: pointer;
+            animation: pulse 1.8s infinite;
+            /* SECURITY: prevent context menu on long press */
+            -webkit-user-select: none; user-select: none;
+            -webkit-touch-callout: none;
+        }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+        .claim-btn:active { transform: scale(0.95) !important; animation: none; }
+
+        /* ---- TAP BTN ---- */
         .tap-btn {
-            width: 50vw; height: 50vw; max-width: 250px; max-height: 250px; min-width: 180px; min-height: 180px;
-            background: linear-gradient(145deg, #151518, #222228); border-radius: 50%; 
+            width: 50vw; height: 50vw; max-width: 240px; max-height: 240px; min-width: 170px; min-height: 170px;
+            background: linear-gradient(145deg, #151518, #222228); border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 15px 15px 40px #040405, -15px -15px 40px #14141b, inset 0px 0px 20px rgba(255, 69, 58, 0.2);
-            margin: auto; user-select: none; transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+            box-shadow: 14px 14px 38px #040405, -14px -14px 38px #14141b, inset 0 0 18px rgba(255,69,58,0.15);
+            margin: auto; user-select: none; touch-action: none;
+            transition: transform 0.1s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.15s ease;
+            -webkit-touch-callout: none;
         }
-        .tap-btn.bouncing {
-            transform: scale(0.85); box-shadow: 5px 5px 15px #040405, -5px -5px 15px #14141b, inset 0px 0px 40px rgba(255, 69, 58, 0.6);
+        .tap-btn.bouncing { transform: scale(0.84); box-shadow: 4px 4px 12px #040405, -4px -4px 12px #14141b, inset 0 0 36px rgba(255,69,58,0.55); }
+        .tap-btn.disabled-tap { opacity: 0.35; cursor: not-allowed; }
+
+        .floating-text { position: absolute; font-size: 1.8rem; font-weight: 900; color: #ff9f0a; text-shadow: 0 0 18px #ff453a; pointer-events: none; animation: floatUp 0.65s ease forwards; }
+        @keyframes floatUp { 0% { opacity:1; transform: translateY(0) scale(0.8); } 60% { transform: translateY(-55px) scale(1.15); } 100% { opacity:0; transform: translateY(-95px) scale(1); } }
+
+        /* ---- PREVIOUS WINNER CARD ---- */
+        .prev-winner-card {
+            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,159,10,0.05));
+            border: 1px solid rgba(255,215,0,0.2); border-radius: 16px;
+            padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+            width: 100%; max-width: 500px; box-sizing: border-box; margin-bottom: 15px;
         }
-        .tap-btn.disabled-tap {
-            opacity: 0.4;
-            cursor: not-allowed;
+        .prev-winner-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg,#ff9f0a,#ff453a);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; flex-shrink: 0;
         }
 
-        .floating-text { position: absolute; font-size: 2rem; font-weight: 900; color: #ff9f0a; text-shadow: 0 0 20px #ff453a; pointer-events: none; animation: floatUpSmoother 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        @keyframes floatUpSmoother { 0% { opacity: 1; transform: translateY(0) scale(0.8); } 50% { transform: translateY(-60px) scale(1.2); } 100% { opacity: 0; transform: translateY(-100px) scale(1); } }
+        /* ---- LEADERBOARD ---- */
+        .lb-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06);
+            width: 100%; box-sizing: border-box; border-radius: 10px;
+            transition: background 0.2s;
+        }
+        .lb-row.me { background: rgba(0,122,255,0.12); }
+        .lb-row:last-child { border-bottom: none; }
 
-        .nav-bar { display: flex; background: rgba(9,9,11,0.95); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); padding: 15px; padding-bottom: env(safe-area-inset-bottom, 20px); position: fixed; bottom: 0; left:0; width: 100vw; box-sizing: border-box; justify-content: space-around; z-index: 100; }
-        .nav-item { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; text-align: center; cursor: pointer; transition: 0.3s; }
-        .nav-item.active { color: var(--primary); text-shadow: 0 0 15px rgba(0,122,255,0.5); }
-        
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        /* ---- NAV BAR ---- */
+        .nav-bar {
+            display: flex; background: rgba(9,9,11,0.96); backdrop-filter: blur(18px);
+            border-top: 1px solid var(--glass-border);
+            padding: 10px 0; padding-bottom: env(safe-area-inset-bottom, 16px);
+            position: fixed; bottom: 0; left: 0; width: 100vw; box-sizing: border-box;
+            justify-content: space-around; z-index: 100;
+        }
+        .nav-item {
+            color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
+            text-align: center; cursor: pointer; transition: 0.25s;
+            display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 12px;
+        }
+        .nav-item .nav-icon { font-size: 1.35rem; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active .nav-icon { filter: drop-shadow(0 0 6px rgba(0,122,255,0.7)); }
+
+        /* ---- MODAL ---- */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.82); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
         .modal-overlay.show { display: flex; }
-        input { width: 100%; padding: 14px; border-radius: 12px; margin-bottom: 15px; border: none; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border); outline: none; box-sizing: border-box; font-family: inherit;}
-        button.admin-btn { width: 100%; padding: 14px; border-radius: 12px; margin-bottom: 10px; background: var(--primary); color: #fff; font-weight: bold; border: none; cursor: pointer; box-sizing: border-box; font-size: 0.95rem; transition: opacity 0.2s; }
-        button.admin-btn:active { opacity: 0.75; }
-        button.admin-btn.danger { background: #ff453a; border: 2px solid rgba(255,69,58,0.5); }
-        button.admin-btn.warning { background: #ff9f0a; }
-        button.admin-btn.success { background: #34c759; }
-        button.admin-btn.muted { background: #2c2c2e; }
-        
+
+        /* ---- INPUTS ---- */
+        .field-group { margin-bottom: 16px; }
+        .field-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block; }
+        input, select {
+            width: 100%; padding: 13px 14px; border-radius: 12px;
+            background: rgba(255,255,255,0.06); color: #fff;
+            border: 1px solid var(--glass-border); outline: none;
+            box-sizing: border-box; font-family: inherit; font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: rgba(0,122,255,0.5); }
+
+        /* ---- ADMIN BUTTONS ---- */
+        .btn {
+            width: 100%; padding: 14px; border-radius: 14px; margin-bottom: 10px;
+            color: #fff; font-weight: 700; border: none; cursor: pointer;
+            box-sizing: border-box; font-size: 0.95rem; font-family: inherit;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: transform 0.12s, opacity 0.15s;
+            -webkit-touch-callout: none; user-select: none;
+        }
+        .btn:active { transform: scale(0.96); opacity: 0.85; }
+        .btn-primary { background: linear-gradient(135deg, #007aff, #0055cc); box-shadow: 0 4px 15px rgba(0,122,255,0.25); }
+        .btn-success { background: linear-gradient(135deg, #34c759, #249c43); box-shadow: 0 4px 15px rgba(52,199,89,0.2); }
+        .btn-warning { background: linear-gradient(135deg, #ff9f0a, #cc7a00); box-shadow: 0 4px 15px rgba(255,159,10,0.2); }
+        .btn-danger  { background: linear-gradient(135deg, #ff453a, #c0392b); box-shadow: 0 4px 15px rgba(255,69,58,0.25); border: 1px solid rgba(255,69,58,0.3); }
+        .btn-muted   { background: #1c1c1e; border: 1px solid rgba(255,255,255,0.08); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        .admin-status-bar {
-            display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
-            border-radius: 14px; padding: 12px 16px; margin-bottom: 15px;
-            width: 100%; max-width: 500px; box-sizing: border-box;
+        /* ---- ADMIN SECTION ---- */
+        .admin-section { width: 100%; max-width: 500px; margin-bottom: 12px; }
+        .section-header {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--text-muted); margin-bottom: 12px;
         }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; display: inline-block; }
-        .status-dot.active { background: #34c759; box-shadow: 0 0 8px #34c759; }
-        .status-dot.inactive { background: #ff453a; box-shadow: 0 0 8px #ff453a; }
-        .section-label {
-            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-            color: var(--text-muted); margin-bottom: 10px; margin-top: 5px;
+        .section-header::after { content: ''; flex: 1; height: 1px; background: var(--glass-border); }
+
+        /* ---- STATUS PILL ---- */
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 16px; border-radius: 14px;
+            font-size: 0.9rem; font-weight: 700;
+            width: 100%; box-sizing: border-box; margin-bottom: 16px;
         }
-        .danger-zone { border-color: rgba(255,69,58,0.3) !important; }
-        .danger-zone h2 { color: #ff453a !important; }
+        .status-pill.active { background: rgba(52,199,89,0.12); border: 1px solid rgba(52,199,89,0.25); color: #34c759; }
+        .status-pill.inactive { background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.2); color: #ff453a; }
+        .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .status-dot.active { background: #34c759; box-shadow: 0 0 7px #34c759; animation: blink 1.5s infinite; }
+        .status-dot.inactive { background: #ff453a; }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+        /* ---- DANGER ZONE BOX ---- */
+        .danger-box {
+            background: rgba(255,69,58,0.04); border: 1px solid rgba(255,69,58,0.2);
+            border-radius: 18px; padding: 18px 16px; width: 100%; max-width: 500px;
+            box-sizing: border-box; margin-bottom: 12px;
+        }
+        .danger-box .section-header { color: #ff6b60; }
+        .danger-box .section-header::after { background: rgba(255,69,58,0.2); }
     </style>
 </head>
 <body>
 
-    <!-- SCREEN 1: SPLASH -->
-    <div id="screen-login" class="screen active" style="justify-content: center;">
-        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:15px; filter: drop-shadow(0 0 25px rgba(255,69,58,0.6));">
-          <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
-          <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
+<!-- SCREEN 1: SPLASH -->
+<div id="screen-login" class="screen active" style="justify-content:center;">
+    <svg width="90" height="90" viewBox="0 0 24 24" fill="none" style="margin-bottom:14px; filter:drop-shadow(0 0 22px rgba(255,69,58,0.65));">
+        <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
+        <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
+    </svg>
+    <h1 style="margin:0; font-size:2rem; background:linear-gradient(135deg,#fff,#ff9f0a); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">RamsGiveaway</h1>
+    <div class="glass" style="margin-top:22px; text-align:left; line-height:1.6; font-size:0.93rem;">
+        <ul style="padding-left:18px; color:var(--text-muted); margin:0;">
+            <li style="margin-bottom:9px;"><b style="color:#fff;">Tap Cepat:</b> Sentuh api berkali-kali untuk poin.</li>
+            <li><b style="color:#fff;">Peringkat 1:</b> Hanya juara 1 yang mendapat tombol klaim hadiah di akhir sesi!</li>
+        </ul>
+    </div>
+    <button class="login-btn" onclick="performLogin()">🔥 Mulai Bermain</button>
+</div>
+
+<!-- SCREEN 2: GAMEPLAY -->
+<div id="screen-game" class="screen">
+
+    <!-- Score Card -->
+    <div class="score-card">
+        <div class="score-label">Total Tap Kamu</div>
+        <div class="score-val" id="score-display">0</div>
+        <div id="my-rank-info" class="rank-badge">📊 Posisi: Memuat...</div>
+        <br>
+        <div id="session-timer" class="session-timer-pill">⏳ Menghitung sesi...</div>
+    </div>
+
+    <!-- Banner: Sesi Belum Dimulai -->
+    <div id="banner-not-started" class="glass" style="display:none; text-align:center; border-color:rgba(142,142,147,0.3); background:rgba(142,142,147,0.06);">
+        <div style="font-size:2rem; margin-bottom:8px;">⏸️</div>
+        <h3 style="margin:0 0 6px; color:#aeaeb2;">Sesi Belum Dimulai</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Tunggu admin memulai sesi. Kamu belum bisa tap sekarang.</p>
+    </div>
+
+    <!-- Banner: Sesi Berakhir (bukan juara 1) -->
+    <div id="banner-loser" class="glass" style="display:none; text-align:center; border-color:rgba(255,159,10,0.25); background:rgba(255,159,10,0.06);">
+        <div style="font-size:2.5rem; margin-bottom:6px;">😔</div>
+        <h3 style="margin:0 0 6px; color:#ff9f0a;">Sesi Telah Berakhir</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Kamu tidak berhasil meraih posisi 1. Coba lagi di sesi berikutnya! 💪</p>
+    </div>
+
+    <!-- Banner: Juara 1 -->
+    <div id="winner-banner" class="glass" style="display:none; text-align:center; border-color:rgba(52,199,89,0.4); background:rgba(52,199,89,0.08);">
+        <div style="font-size:2.5rem; margin-bottom:6px;">🏆</div>
+        <h2 style="margin:0 0 6px; color:#34c759;">SELAMAT! KAMU JUARA 1!</h2>
+        <p style="font-size:0.85rem; color:#86efac; margin:0 0 4px;">Waktu telah habis dan kamu mempertahankan posisi puncak!</p>
+        <button class="claim-btn" id="claim-btn" onclick="claimReward()">🎁 KLAIM HADIAH SEKARANG</button>
+    </div>
+
+    <!-- Previous Winner Info -->
+    <div id="prev-winner-card" class="prev-winner-card" style="display:none;">
+        <div class="prev-winner-avatar">👑</div>
+        <div>
+            <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:1px;">Juara Sesi Sebelumnya</div>
+            <div id="prev-winner-name" style="font-weight:800; font-size:0.95rem;"></div>
+            <div id="prev-winner-score" style="font-size:0.8rem; color:#ff9f0a;"></div>
+        </div>
+    </div>
+
+    <!-- Tap Button -->
+    <div class="tap-btn disabled-tap" id="tap-btn">
+        <svg width="75" height="75" viewBox="0 0 24 24" fill="none" style="filter:drop-shadow(0 0 14px rgba(255,69,58,0.8)); pointer-events:none;">
+            <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
+            <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
         </svg>
-        <h1 style="margin:0; font-size: 2.2rem; background: linear-gradient(135deg, #fff, #ff9f0a); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">RamsGiveaway</h1>
-        
-        <div class="glass" style="margin-top: 25px; text-align: left; line-height: 1.5; font-size: 0.95rem;">
-            <ul style="padding-left: 20px; color: var(--text-muted);">
-                <li style="margin-bottom: 10px;"><b>Tap Cepat:</b> Sentuh api berkali-kali untuk poin.</li>
-                <li style="margin-bottom: 10px;"><b>Peringkat 1:</b> Hanya peringkat 1 yang mendapat akses tombol klaim hadiah di akhir sesi!</li>
-            </ul>
-        </div>
-        <button class="login-btn" onclick="performLogin()">🔥 Mulai Bermain</button>
+    </div>
+</div>
+
+<!-- SCREEN 3: LEADERBOARD -->
+<div id="screen-leaderboard" class="screen">
+    <div class="glass" style="max-width:600px;">
+        <h2 style="margin:0 0 16px; text-align:center; font-size:1.2rem;">🏆 Papan Peringkat <span id="lb-live-dot" style="display:none; font-size:0.6rem; vertical-align:middle; background:#34c759; border-radius:50%; width:8px; height:8px; display:inline-block; box-shadow:0 0 6px #34c759;"></span></h2>
+        <div id="lb-list" style="width:100%;">Loading...</div>
+    </div>
+</div>
+
+<!-- SCREEN 4: ADMIN -->
+<div id="screen-admin" class="screen">
+
+    <!-- Status Pill -->
+    <div id="admin-status-pill" class="status-pill inactive" style="max-width:500px;">
+        <span class="status-dot inactive" id="admin-dot"></span>
+        <span id="admin-status-text">Memuat status...</span>
+        <span id="admin-status-endtime" style="margin-left:auto; font-size:0.72rem; font-weight:500; color:var(--text-muted);"></span>
     </div>
 
-    <!-- SCREEN 2: GAMEPLAY -->
-    <div id="screen-game" class="screen">
-        <div class="glass" style="text-align: center; border-radius: 25px;">
-            <div style="color: var(--text-muted); font-size: 0.9rem; font-weight: bold; text-transform: uppercase;">Total Skor</div>
-            <div class="score-val" id="score-display">0</div>
-            <div id="my-rank-info" class="rank-badge">Posisimu: Sedang memuat...</div>
-            <br>
-            <div id="session-timer" style="font-size: 0.9rem; font-weight:bold; color: #ff9f0a; margin-top: 5px; background: rgba(255, 159, 10, 0.1); padding: 8px 15px; border-radius: 20px; display: inline-block;">Menghitung Sesi...</div>
-        </div>
-        
-        <!-- PENGUMUMAN JUARA (Muncul jika sesi habis & user ini rank 1) -->
-        <div id="winner-banner" class="glass" style="display: none; text-align: center; border-color: #34c759; background: rgba(52, 199, 89, 0.1);">
-            <h2 style="margin-top:0; color: #34c759;">🎉 SELAMAT! KAMU JUARA 1!</h2>
-            <p style="font-size: 0.9rem;">Waktu telah habis dan kamu mempertahankan posisi puncak!</p>
-            <button class="claim-btn" onclick="claimReward()">🎁 KLAIM HADIAH</button>
-        </div>
-
-        <div class="tap-btn disabled-tap" id="tap-btn">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 15px rgba(255,69,58,0.8)); pointer-events: none;">
-              <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
-              <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
-            </svg>
-        </div>
-    </div>
-
-    <!-- SCREEN 3: LEADERBOARD -->
-    <div id="screen-leaderboard" class="screen">
-        <div class="glass" style="max-width: 600px;">
-            <h2 style="margin-top:0; text-align: center;">🏆 Papan Peringkat</h2>
-            <div id="lb-list" style="width: 100%;">Loading...</div>
-        </div>
-    </div>
-
-    <!-- SCREEN 4: ADMIN -->
-    <div id="screen-admin" class="screen">
-
-        <!-- Status Bar -->
-        <div class="admin-status-bar">
-            <div style="display:flex; align-items:center;">
-                <span class="status-dot" id="status-dot"></span>
-                <span id="status-label" style="font-weight:700; font-size:0.9rem;">Memuat...</span>
+    <!-- Konfigurasi -->
+    <div class="admin-section">
+        <div class="section-header">⚙️ Konfigurasi Sesi</div>
+        <div class="glass" style="padding:18px;">
+            <div class="field-group">
+                <label class="field-label">Link Hadiah Juara 1</label>
+                <input type="url" id="admin-link" placeholder="https://t.me/GrupVIP..." autocomplete="off">
             </div>
-            <span id="status-endtime" style="font-size:0.75rem; color:var(--text-muted);"></span>
-        </div>
-
-        <!-- Konfigurasi -->
-        <div class="glass" style="max-width: 600px;">
-            <div class="section-label">⚙️ Konfigurasi</div>
-            <label style="color: var(--text-muted); font-size: 0.8rem; display:block; margin-bottom:6px;">Link Redirect Juara 1</label>
-            <input type="url" id="admin-link" placeholder="https://t.me/GrupVIP...">
-            
-            <label style="color: var(--text-muted); font-size: 0.8rem; display:block; margin-bottom:6px;">Batas Akhir Sesi</label>
-            <input type="datetime-local" id="admin-end-time">
-            
-            <button class="admin-btn" onclick="adminAction('update_config')">💾 Simpan Konfigurasi</button>
-        </div>
-
-        <!-- Kontrol Sesi -->
-        <div class="glass" style="max-width: 600px;">
-            <div class="section-label">🕹️ Kontrol Sesi</div>
-            <div class="grid-2">
-                <button class="admin-btn success" onclick="adminAction('start')">▶️ Mulai Sesi</button>
-                <button class="admin-btn warning" onclick="adminAction('end')">⏹️ Akhiri Sesi</button>
+            <div class="field-group" style="margin-bottom:0;">
+                <label class="field-label">Waktu Berakhir Sesi</label>
+                <input type="datetime-local" id="admin-end-time">
             </div>
         </div>
+        <button class="btn btn-primary" onclick="adminAction('update_config')">💾 Simpan Konfigurasi</button>
+    </div>
 
-        <!-- Danger Zone -->
-        <div class="glass danger-zone" style="max-width: 600px;">
-            <div class="section-label" style="color:#ff453a;">⚠️ Danger Zone</div>
-            <button class="admin-btn danger" onclick="adminAction('reset')">🔄 Reset Skor (Simpan History Juara)</button>
-            <button class="admin-btn muted" onclick="adminAction('delete')">🗑️ Hapus Total Database</button>
+    <!-- Kontrol Sesi -->
+    <div class="admin-section">
+        <div class="section-header">🕹️ Kontrol Sesi</div>
+        <div class="grid-2">
+            <button class="btn btn-success" onclick="adminAction('start')">▶️ Mulai Sesi</button>
+            <button class="btn btn-warning" onclick="adminAction('end')">⏹️ Akhiri Sesi</button>
         </div>
     </div>
 
-    <!-- MODAL PASSWORD -->
-    <div id="pwd-modal" class="modal-overlay">
-        <div class="glass" style="width: 85%; max-width: 320px; text-align: center;">
-            <h3 style="margin-top:0;">🔒 Akses Admin</h3>
-            <input type="password" id="admin-pwd-input" placeholder="Password...">
-            <div class="grid-2" style="margin-top:10px;">
-                <button class="admin-btn muted" onclick="document.getElementById('pwd-modal').classList.remove('show')">Batal</button>
-                <button class="admin-btn" onclick="verifyAdmin()">Masuk</button>
-            </div>
+    <!-- Danger Zone -->
+    <div class="danger-box">
+        <div class="section-header">⚠️ Danger Zone</div>
+        <button class="btn btn-danger" onclick="adminAction('reset')">🔄 Reset Skor (Simpan Juara)</button>
+        <button class="btn btn-muted" onclick="adminAction('delete')">🗑️ Hapus Total Database</button>
+    </div>
+
+    <!-- Juara Sebelumnya (di admin juga) -->
+    <div id="admin-prev-winner" class="admin-section" style="display:none;">
+        <div class="section-header">👑 Juara Sesi Sebelumnya</div>
+        <div class="glass" style="padding:14px 16px;">
+            <div id="admin-prev-winner-text" style="font-size:0.9rem;"></div>
         </div>
     </div>
 
-    <!-- BOTTOM NAVIGATION -->
-    <div class="nav-bar" id="navbar" style="display: none;">
-        <div class="nav-item active" onclick="switchTab('game', this)">🎮 Game</div>
-        <div class="nav-item" onclick="switchTab('leaderboard', this)">🏆 Rank</div>
-        <div class="nav-item" onclick="promptAdminModal(this)">⚙️ Admin</div>
+</div>
+
+<!-- MODAL PASSWORD -->
+<div id="pwd-modal" class="modal-overlay">
+    <div class="glass" style="width:88%; max-width:320px; text-align:center;">
+        <h3 style="margin:0 0 16px;">🔒 Akses Admin</h3>
+        <input type="password" id="admin-pwd-input" placeholder="Masukkan password..." autocomplete="current-password">
+        <div class="grid-2" style="margin-top:4px;">
+            <button class="btn btn-muted" onclick="document.getElementById('pwd-modal').classList.remove('show')">Batal</button>
+            <button class="btn btn-primary" onclick="verifyAdmin()">Masuk</button>
+        </div>
     </div>
+</div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.setHeaderColor('#09090b');
+<!-- BOTTOM NAV -->
+<div class="nav-bar" id="navbar" style="display:none;">
+    <div class="nav-item active" onclick="switchTab('game', this)">
+        <span class="nav-icon">🎮</span><span>Game</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('leaderboard', this)">
+        <span class="nav-icon">🏆</span><span>Rank</span>
+    </div>
+    <div class="nav-item" onclick="promptAdminModal(this)">
+        <span class="nav-icon">⚙️</span><span>Admin</span>
+    </div>
+</div>
 
-        // FIX: isActiveSession default false, tunggu fetchState()
-        let score = 0, pendingTaps = 0, lastTapTime = 0;
-        let isActiveSession = false;
-        let sessionLoaded = false;
-        let myRank = '-';
-        let winnerLinkURL = '';
-        let storedAdminPassword = "", tempNavElement = null;
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.setHeaderColor('#09090b');
 
-        // FIX: Wajib login Telegram, blokir jika buka dari browser biasa
-        const realUser = tg.initDataUnsafe?.user;
-        if (!realUser || !realUser.id) {
-            document.querySelector('.login-btn').onclick = () => {
-                tg.showAlert("⚠️ Kamu harus membuka game ini melalui Telegram Mini App. Tidak bisa dimainkan dari browser biasa.");
-            };
+    let score = 0, pendingTaps = 0, lastTapTime = 0;
+    let isActiveSession = false;
+    let sessionLoaded = false;
+    let hasEndTime = false;
+    let myRank = '-';
+    // winnerToken: token unik yang di-generate server saat sesi berakhir, digunakan untuk klaim
+    // Link asli TIDAK disimpan di client sama sekali
+    let claimToken = null;
+    let storedAdminPassword = '', tempNavElement = null;
+    let liveInterval = null;
+
+    const realUser = tg.initDataUnsafe?.user;
+    if (!realUser || !realUser.id) {
+        document.querySelector('.login-btn').onclick = () => {
+            tg.showAlert('⚠️ Buka game ini melalui Telegram Mini App. Tidak bisa dari browser biasa.');
+        };
+    }
+    const user = realUser || { id: 'guest_' + Math.random().toString(36).slice(2), first_name: 'Tamu', username: 'guest' };
+
+    function performLogin() {
+        if (!tg.initDataUnsafe?.user) {
+            tg.showAlert('⚠️ Harus dibuka melalui Telegram untuk bisa bermain dan masuk leaderboard!');
+            return;
         }
-        const user = realUser || { id: 'guest_' + Math.random().toString(36).slice(2), first_name: 'Tamu', username: 'guest' };
+        document.getElementById('screen-login').classList.remove('active');
+        document.getElementById('screen-game').classList.add('active');
+        document.getElementById('navbar').style.display = 'flex';
+        fetchState();
+        startLiveLeaderboard();
+    }
 
-        function performLogin() {
-            // FIX: Cek Telegram login sebelum masuk game
-            if (!tg.initDataUnsafe?.user) {
-                tg.showAlert("⚠️ Kamu harus membuka game ini melalui Telegram untuk bisa bermain dan masuk leaderboard!");
-                return;
+    function switchTab(tab, el) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('screen-' + tab).classList.add('active');
+        el.classList.add('active');
+        if (tab === 'leaderboard') fetchLeaderboard();
+        if (tab === 'admin') refreshAdminPanel();
+    }
+
+    function promptAdminModal(el) {
+        if (storedAdminPassword) switchTab('admin', el);
+        else { tempNavElement = el; document.getElementById('pwd-modal').classList.add('show'); document.getElementById('admin-pwd-input').value = ''; }
+    }
+
+    function verifyAdmin() {
+        const pwd = document.getElementById('admin-pwd-input').value;
+        fetch('/api/admin/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-password': pwd },
+            body: JSON.stringify({ action: 'update_config' })
+        }).then(res => {
+            if (res.ok) {
+                storedAdminPassword = pwd;
+                document.getElementById('pwd-modal').classList.remove('show');
+                switchTab('admin', tempNavElement);
+            } else tg.showAlert('❌ Sandi Salah!');
+        });
+    }
+
+    // ---- ADMIN PANEL ----
+    function refreshAdminPanel() {
+        const pill = document.getElementById('admin-status-pill');
+        const dot = document.getElementById('admin-dot');
+        const txt = document.getElementById('admin-status-text');
+        const endTxt = document.getElementById('admin-status-endtime');
+
+        if (isActiveSession) {
+            pill.className = 'status-pill active'; dot.className = 'status-dot active';
+            txt.innerText = 'Sesi Sedang Berjalan';
+        } else {
+            pill.className = 'status-pill inactive'; dot.className = 'status-dot inactive';
+            txt.innerText = hasEndTime ? 'Sesi Telah Berakhir' : 'Sesi Belum Dimulai';
+        }
+
+        fetch('/api/state').then(r => r.json()).then(data => {
+            if (data.endTime) endTxt.innerText = 'Berakhir: ' + new Date(data.endTime).toLocaleString('id-ID', { dateStyle:'short', timeStyle:'short' });
+            if (!document.getElementById('admin-link').value) document.getElementById('admin-link').value = data.winnerLink || '';
+            if (data.previousWinner) {
+                document.getElementById('admin-prev-winner').style.display = 'block';
+                document.getElementById('admin-prev-winner-text').innerHTML =
+                    '<b>' + data.previousWinner.first_name + '</b> &mdash; ' +
+                    parseInt(data.previousWinner.total_score).toLocaleString('id-ID') + ' poin';
             }
-            document.getElementById('screen-login').classList.remove('active');
-            document.getElementById('screen-game').classList.add('active');
-            document.getElementById('navbar').style.display = 'flex';
-            fetchState();
+        });
+
+        const dtInput = document.getElementById('admin-end-time');
+        if (!dtInput.value) {
+            const d = new Date(Date.now() + 3600000);
+            const pad = n => String(n).padStart(2, '0');
+            dtInput.value = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
         }
+    }
 
-        function switchTab(tab, el) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(`screen-${tab}`).classList.add('active');
-            el.classList.add('active');
-            if (tab === 'leaderboard') fetchLeaderboard();
-            if (tab === 'admin') updateAdminStatusBar();
+    // ---- TAP LOGIC ----
+    let tapCountPerSecond = 0;
+    setInterval(() => { tapCountPerSecond = 0; }, 1000);
+
+    const tapBtn = document.getElementById('tap-btn');
+    tapBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (!sessionLoaded) return;
+        if (!isActiveSession) { tg.showAlert('🔴 Sesi belum dimulai atau sudah berakhir!'); return; }
+        if (tapCountPerSecond >= 10) return;
+
+        const now = Date.now();
+        if (now - lastTapTime < 40) return;
+        lastTapTime = now;
+
+        tapBtn.classList.add('bouncing');
+        setTimeout(() => tapBtn.classList.remove('bouncing'), 100);
+
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            tapCountPerSecond++; score++; pendingTaps++;
+            document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
+            tg.HapticFeedback.impactOccurred('rigid');
+            createFloatingText(t.clientX + (Math.random() - 0.5) * 40, t.clientY - 20);
         }
+    }, { passive: false });
 
-        function promptAdminModal(el) {
-            if(storedAdminPassword) switchTab('admin', el);
-            else { tempNavElement = el; document.getElementById('pwd-modal').classList.add('show'); document.getElementById('admin-pwd-input').value = ""; }
-        }
+    // Blokir context menu (prevent link leak on long-press)
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
-        function verifyAdmin() {
-            const pwd = document.getElementById('admin-pwd-input').value;
-            fetch('/api/admin/action', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-password': pwd },
-                body: JSON.stringify({ action: 'update_config' })
-            }).then(res => {
-                if (res.ok) {
-                    storedAdminPassword = pwd;
-                    document.getElementById('pwd-modal').classList.remove('show');
-                    switchTab('admin', tempNavElement);
-                } else {
-                    tg.showAlert("❌ Sandi Salah!");
-                }
-            });
-        }
+    function createFloatingText(x, y) {
+        const el = document.createElement('div');
+        el.className = 'floating-text'; el.innerText = '+1';
+        el.style.left = (x - 20) + 'px'; el.style.top = (y - 40) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 650);
+    }
 
-        function updateAdminStatusBar() {
-            const dot = document.getElementById('status-dot');
-            const label = document.getElementById('status-label');
-            const endEl = document.getElementById('status-endtime');
-            if (isActiveSession) {
-                dot.className = 'status-dot active';
-                label.innerText = 'Sesi Sedang Berjalan';
-                label.style.color = '#34c759';
-            } else {
-                dot.className = 'status-dot inactive';
-                label.innerText = 'Sesi Tidak Aktif';
-                label.style.color = '#ff453a';
-            }
-            // Pre-fill datetime input dengan +1 jam jika kosong
-            const dtInput = document.getElementById('admin-end-time');
-            if (!dtInput.value) {
-                const d = new Date(Date.now() + 60 * 60 * 1000);
-                const pad = n => String(n).padStart(2, '0');
-                dtInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-            }
-        }
-
-        // FIX: Client-side tap rate limit (max 10 tap/detik)
-        let tapCountPerSecond = 0;
-        setInterval(() => { tapCountPerSecond = 0; }, 1000);
-
-        const tapBtn = document.getElementById('tap-btn');
-        tapBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-
-            // FIX: Blokir jika sesi belum loaded atau tidak aktif
-            if (!sessionLoaded) return;
-            if (!isActiveSession) {
-                tg.showAlert("🔴 Sesi belum dimulai atau sudah berakhir. Kamu belum bisa tap!");
-                return;
-            }
-
-            // FIX: Auto clicker detection (client-side)
-            if (tapCountPerSecond >= 10) return;
-
-            const now = Date.now();
-            if (now - lastTapTime < 40) return; 
-            lastTapTime = now;
-
-            tapBtn.classList.add('bouncing');
-            setTimeout(() => tapBtn.classList.remove('bouncing'), 100);
-
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const touch = e.changedTouches[i];
-                tapCountPerSecond++;
-                score++; pendingTaps++;
-                document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
-                tg.HapticFeedback.impactOccurred('rigid');
-                createFloatingText(touch.clientX + ((Math.random() - 0.5) * 40), touch.clientY - 20);
-            }
-        }, { passive: false });
-
-        function createFloatingText(x, y) {
-            const floatEl = document.createElement('div');
-            floatEl.className = 'floating-text';
-            floatEl.innerText = '+1';
-            floatEl.style.left = `${x - 20}px`; floatEl.style.top = `${y - 40}px`;
-            document.body.appendChild(floatEl);
-            setTimeout(() => floatEl.remove(), 700);
-        }
-
-        // Background Sync
-        setInterval(async () => {
-            if (pendingTaps > 0) {
-                // FIX: Validasi taps per request tidak boleh > 30
-                const taps = Math.min(pendingTaps, 30);
-                pendingTaps -= taps;
-                try {
-                    const res = await fetch('/api/save-score', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ tg_id: user.id.toString(), username: user.username || '', first_name: user.first_name, taps })
-                    });
-                    const data = await res.json();
-                    if (res.status === 429) { 
-                        tg.showAlert("⚠️ Anti-Cheat: Tap terlalu cepat terdeteksi!"); 
-                        pendingTaps = 0; 
-                    } else if (data.success) { 
-                        score = data.total_score + pendingTaps; 
-                        document.getElementById('score-display').innerText = score.toLocaleString('id-ID'); 
-                        fetchMe();
-                    }
-                } catch (e) { pendingTaps += taps; }
-            }
-        }, 3000);
-
-        async function fetchMe() {
+    // ---- BACKGROUND SYNC ----
+    setInterval(async () => {
+        if (pendingTaps > 0) {
+            const taps = Math.min(pendingTaps, 30); pendingTaps -= taps;
             try {
-                const res = await fetch('/api/me/' + user.id);
+                const res = await fetch('/api/save-score', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tg_id: user.id.toString(), username: user.username || '', first_name: user.first_name, taps })
+                });
                 const data = await res.json();
-                myRank = data.rank;
-                // FIX: Restore skor dari server saat pertama load
-                if (data.total_score !== undefined && score === 0 && pendingTaps === 0) {
-                    score = parseInt(data.total_score) || 0;
-                    document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
+                if (res.status === 429) { tg.showAlert('⚠️ Anti-Cheat: Tap terlalu cepat!'); pendingTaps = 0; }
+                else if (data.success) { score = data.total_score + pendingTaps; document.getElementById('score-display').innerText = score.toLocaleString('id-ID'); fetchMe(); }
+            } catch (e) { pendingTaps += taps; }
+        }
+    }, 3000);
+
+    // ---- FETCH ME ----
+    async function fetchMe() {
+        try {
+            const res = await fetch('/api/me/' + user.id);
+            const data = await res.json();
+            myRank = data.rank;
+            if (data.total_score !== undefined && score === 0 && pendingTaps === 0) {
+                score = parseInt(data.total_score) || 0;
+                document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
+            }
+            document.getElementById('my-rank-info').innerText = '📊 Posisi: #' + myRank;
+            checkEndBanners();
+        } catch(e) {}
+    }
+
+    // ---- BANNERS ----
+    function checkEndBanners() {
+        const winnerBanner   = document.getElementById('winner-banner');
+        const loserBanner    = document.getElementById('banner-loser');
+        const notStarted     = document.getElementById('banner-not-started');
+        const tapEl          = document.getElementById('tap-btn');
+
+        // Reset
+        winnerBanner.style.display = 'none';
+        loserBanner.style.display  = 'none';
+        notStarted.style.display   = 'none';
+
+        if (!sessionLoaded) return;
+
+        if (isActiveSession) {
+            // Sesi aktif: tampilkan tombol tap, sembunyikan semua banner
+            tapEl.style.display = 'flex';
+        } else {
+            // Sesi tidak aktif
+            tapEl.style.display = 'none';
+            if (!hasEndTime) {
+                // Belum pernah ada endTime → sesi memang belum dimulai
+                notStarted.style.display = 'block';
+            } else {
+                // Sesi sudah pernah jalan lalu berakhir
+                if (myRank == 1) {
+                    winnerBanner.style.display = 'block';
+                } else {
+                    loserBanner.style.display = 'block';
                 }
-                document.getElementById('my-rank-info').innerText = `Posisimu: #${myRank}`;
-                checkWinnerStatus();
-            } catch(e){}
-        }
-
-        function checkWinnerStatus() {
-            if (!isActiveSession && myRank == 1) {
-                document.getElementById('winner-banner').style.display = 'block';
-                document.getElementById('tap-btn').style.display = 'none';
-            } else {
-                document.getElementById('winner-banner').style.display = 'none';
-                document.getElementById('tap-btn').style.display = 'flex';
             }
         }
+    }
 
-        function setTapEnabled(enabled) {
-            if (enabled) {
-                tapBtn.classList.remove('disabled-tap');
-            } else {
-                tapBtn.classList.add('disabled-tap');
-            }
+    // ---- CLAIM (via token, link tidak pernah ke client) ----
+    function claimReward() {
+        if (!claimToken) {
+            tg.showAlert('Link hadiah belum tersedia atau sudah kedaluwarsa.');
+            return;
         }
+        // Redirect via server-side; link asli tidak di-expose ke frontend
+        const claimUrl = '/api/claim/' + encodeURIComponent(claimToken) + '?tg_id=' + user.id;
+        tg.openLink(window.location.origin + claimUrl);
+    }
 
-        function claimReward() {
-            if (winnerLinkURL) {
-                tg.openLink(winnerLinkURL);
-            } else {
-                tg.showAlert("Link hadiah belum disiapkan oleh admin.");
-            }
-        }
-
-        async function fetchLeaderboard() {
+    // ---- LEADERBOARD ----
+    async function fetchLeaderboard() {
+        const list = document.getElementById('lb-list');
+        try {
             const res = await fetch('/api/leaderboard');
             const data = await res.json();
-            const list = document.getElementById('lb-list');
             list.innerHTML = '';
+            if (!data.length) { list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada pemain</div>'; return; }
             data.forEach((p, i) => {
-                let badge = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-                let isMe = p.tg_id === user.id.toString();
-                list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:15px 10px; border-bottom:1px solid rgba(255,255,255,0.1); ${isMe ? 'background:rgba(0,122,255,0.15); border-radius:10px;' : ''} width:100%; box-sizing:border-box;">
-                    <div><b>${badge} ${p.first_name}</b> ${isMe ? '(Anda)' : ''}<br><small style="color:#8e8e93">@${p.username}</small></div>
-                    <div style="font-weight:bold; color:#ff9f0a;">${parseInt(p.total_score).toLocaleString('id-ID')}</div></div>`;
+                const badge = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--text-muted);font-weight:700;">#'+(i+1)+'</span>';
+                const isMe = p.tg_id === user.id.toString();
+                const row = document.createElement('div');
+                row.className = 'lb-row' + (isMe ? ' me' : '');
+                row.innerHTML =
+                    '<div style="display:flex;align-items:center;gap:10px;">'
+                    + '<span style="font-size:1.3rem;min-width:28px;text-align:center;">' + badge + '</span>'
+                    + '<div><div style="font-weight:700;font-size:0.92rem;">' + p.first_name + (isMe ? ' <span style="font-size:0.72rem;color:#5ac8fa;">(Anda)</span>' : '') + '</div>'
+                    + '<div style="font-size:0.75rem;color:var(--text-muted);">@' + (p.username||'-') + '</div></div></div>'
+                    + '<div style="font-weight:800;color:#ff9f0a;font-size:0.95rem;">' + parseInt(p.total_score).toLocaleString('id-ID') + '</div>';
+                list.appendChild(row);
             });
-        }
+        } catch(e) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);">Gagal memuat</div>'; }
+    }
 
-        async function fetchState() {
-            try {
-                const res = await fetch('/api/state');
-                const data = await res.json();
-                // FIX: isActiveSession baru di-set setelah server reply
-                isActiveSession = data.isActive;
-                sessionLoaded = true;
-                winnerLinkURL = data.winnerLink;
-                setTapEnabled(isActiveSession);
+    // ---- LIVE LEADERBOARD (setiap 5 detik saat sesi aktif, tiap 10 detik jika tidak) ----
+    function startLiveLeaderboard() {
+        if (liveInterval) clearInterval(liveInterval);
+        liveInterval = setInterval(() => {
+            const lbScreen = document.getElementById('screen-leaderboard');
+            if (lbScreen.classList.contains('active')) fetchLeaderboard();
+            fetchMe();
+        }, isActiveSession ? 5000 : 10000);
+    }
 
-                if (!document.getElementById('admin-link').value) document.getElementById('admin-link').value = winnerLinkURL || "";
+    // ---- FETCH STATE ----
+    async function fetchState() {
+        try {
+            const res = await fetch('/api/state');
+            const data = await res.json();
+            isActiveSession = data.isActive;
+            hasEndTime = !!data.endTime;
+            sessionLoaded = true;
+            claimToken = data.claimToken || null;
+            setTapEnabled(isActiveSession);
 
-                if(data.endTime) {
-                    const end = new Date(data.endTime).getTime();
-                    setInterval(() => {
-                        const distance = end - new Date().getTime();
-                        if (distance < 0 || !isActiveSession) {
-                            document.getElementById('session-timer').innerText = "🔴 Sesi Berakhir";
-                            isActiveSession = false;
-                            setTapEnabled(false);
-                            checkWinnerStatus();
-                        } else {
-                            const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                            const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                            const s = Math.floor((distance % (1000 * 60)) / 1000);
-                            document.getElementById('session-timer').innerText = `⏳ Sisa: ${h}j ${m}m ${s}d`;
-                        }
-                    }, 1000);
-                } else if (!isActiveSession) {
-                    document.getElementById('session-timer').innerText = "🔴 Sesi Ditutup Sementara";
-                    checkWinnerStatus();
-                } else {
-                    document.getElementById('session-timer').innerText = "🟢 Sesi Berjalan";
-                }
-
-                fetchMe();
-            } catch(e) {
-                sessionLoaded = true;
-                document.getElementById('session-timer').innerText = "⚠️ Gagal memuat sesi";
+            // Previous winner
+            if (data.previousWinner) {
+                const card = document.getElementById('prev-winner-card');
+                card.style.display = 'flex';
+                document.getElementById('prev-winner-name').innerText = data.previousWinner.first_name;
+                document.getElementById('prev-winner-score').innerText = parseInt(data.previousWinner.total_score).toLocaleString('id-ID') + ' poin';
             }
-        }
 
-        async function adminAction(actionType) {
-            let msg = "Yakin ingin mengeksekusi perintah ini?";
-            if (actionType === 'reset') msg = "Yakin RESET? Semua skor akan jadi 0, tapi sejarah juara #1 akan disimpan.";
-            if (actionType === 'delete') msg = "Yakin HAPUS TOTAL? Semua skor dan data juara akan dilenyapkan dari database.";
-            
-            const performRequest = async () => {
-                const payload = { 
-                    action: actionType,
-                    endTime: document.getElementById('admin-end-time').value ? new Date(document.getElementById('admin-end-time').value).toISOString() : undefined,
-                    winnerLink: document.getElementById('admin-link').value || undefined
-                };
-
-                const res = await fetch('/api/admin/action', {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json', 'x-admin-password': storedAdminPassword },
-                    body: JSON.stringify(payload)
-                });
-
-                if(res.ok) { 
-                    tg.showAlert("✅ Aksi Berhasil!"); 
-                    if(actionType !== 'update_config') window.location.reload(); 
-                    else fetchState();
-                } else {
-                    tg.showAlert("❌ Gagal / Akses ditolak.");
-                }
-            };
-
-            if (['reset', 'delete', 'end'].includes(actionType)) {
-                tg.showConfirm(msg, async (valid) => { if(valid) performRequest(); });
+            if (data.endTime) {
+                const end = new Date(data.endTime).getTime();
+                const timerInterval = setInterval(() => {
+                    const dist = end - Date.now();
+                    const timerEl = document.getElementById('session-timer');
+                    if (dist < 0 || !isActiveSession) {
+                        timerEl.className = 'session-timer-pill inactive';
+                        timerEl.innerText = '🔴 Sesi Berakhir';
+                        isActiveSession = false;
+                        setTapEnabled(false);
+                        checkEndBanners();
+                        clearInterval(timerInterval);
+                    } else {
+                        const h = Math.floor(dist / 3600000);
+                        const m = Math.floor((dist % 3600000) / 60000);
+                        const s = Math.floor((dist % 60000) / 1000);
+                        timerEl.className = 'session-timer-pill';
+                        timerEl.innerText = '⏳ Sisa: ' + h + 'j ' + m + 'm ' + s + 'd';
+                    }
+                }, 1000);
+            } else if (!isActiveSession) {
+                const timerEl = document.getElementById('session-timer');
+                timerEl.className = 'session-timer-pill inactive';
+                timerEl.innerText = '⏸️ Sesi Belum Dimulai';
             } else {
-                performRequest();
+                document.getElementById('session-timer').innerText = '🟢 Sesi Berjalan';
             }
+
+            checkEndBanners();
+            fetchMe();
+            startLiveLeaderboard();
+        } catch(e) {
+            sessionLoaded = true;
+            document.getElementById('session-timer').innerText = '⚠️ Gagal memuat';
         }
-    </script>
+    }
+
+    function setTapEnabled(enabled) {
+        if (enabled) tapBtn.classList.remove('disabled-tap');
+        else tapBtn.classList.add('disabled-tap');
+    }
+
+    // ---- ADMIN ACTION ----
+    async function adminAction(actionType) {
+        let msg = 'Yakin ingin mengeksekusi perintah ini?';
+        if (actionType === 'reset') msg = 'Yakin RESET? Semua skor jadi 0, sejarah juara #1 disimpan.';
+        if (actionType === 'delete') msg = 'Yakin HAPUS TOTAL? Semua skor dan data juara dilenyapkan.';
+
+        const doRequest = async () => {
+            const endVal = document.getElementById('admin-end-time').value;
+            const payload = {
+                action: actionType,
+                endTime: endVal ? new Date(endVal).toISOString() : undefined,
+                winnerLink: document.getElementById('admin-link').value || undefined
+            };
+            const res = await fetch('/api/admin/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-password': storedAdminPassword },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                tg.showAlert('✅ Aksi Berhasil!');
+                if (actionType !== 'update_config') window.location.reload();
+                else { fetchState(); refreshAdminPanel(); }
+            } else tg.showAlert('❌ Gagal / Akses ditolak.');
+        };
+
+        if (['reset','delete','end'].includes(actionType)) tg.showConfirm(msg, ok => { if(ok) doRequest(); });
+        else doRequest();
+    }
+</script>
 </body>
 </html>
