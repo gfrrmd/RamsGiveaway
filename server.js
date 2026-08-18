@@ -25,7 +25,6 @@ const userSyncData = {};
 // --- API GAME & LEADERBOARD ---
 app.get('/api/state', (req, res) => res.json(gameState));
 
-// Endpoint untuk cek rank/posisi user saat ini
 app.get('/api/me/:tg_id', async (req, res) => {
     try {
         const query = `
@@ -48,10 +47,16 @@ app.post('/api/save-score', async (req, res) => {
     if (!tg_id || taps === undefined) return res.status(400).json({ error: "Data tidak valid" });
     if (!gameState.isActive) return res.status(403).json({ error: "Sesi telah berakhir" });
 
+    // FIX: Validasi taps per request maks 30 (10 TPS x 3 detik sync)
+    if (taps > 30 || taps <= 0) return res.status(429).json({ error: "Jumlah tap tidak valid" });
+
     const now = Date.now();
     const userData = userSyncData[tg_id] || { lastSync: now - 3000 };
-    const tps = taps / ((now - userData.lastSync) / 1000 || 1); 
-    if (tps > 15) return res.status(429).json({ error: "Auto-clicker terdeteksi!" });
+    const elapsed = (now - userData.lastSync) / 1000 || 1;
+    const tps = taps / elapsed;
+
+    // FIX: Threshold TPS diturunkan ke 12 untuk lebih ketat
+    if (tps > 12) return res.status(429).json({ error: "Auto-clicker terdeteksi!" });
 
     userSyncData[tg_id] = { lastSync: now };
 
@@ -106,13 +111,11 @@ app.post('/api/admin/action', isAdmin, async (req, res) => {
             gameState.endTime = new Date().toISOString();
         } 
         else if (action === 'reset') {
-            // Simpan juara sebelumnya, skor direset 0
             const topUser = await db.query(`SELECT first_name, total_score, tg_id FROM users ORDER BY total_score DESC LIMIT 1`);
             if (topUser.rows.length > 0) gameState.previousWinner = topUser.rows[0];
             await db.query(`UPDATE users SET total_score = 0`);
         } 
         else if (action === 'delete') {
-            // Hapus data total (bersih)
             gameState.previousWinner = null;
             await db.query(`DELETE FROM users`);
         }
