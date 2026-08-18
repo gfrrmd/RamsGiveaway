@@ -428,6 +428,26 @@ function spawnFloat(x, y) {
     document.body.appendChild(el); setTimeout(()=>el.remove(), 620);
 }
 
+// ─── FORCE REFRESH SCORE FROM SERVER ─────────────────────────────────────────
+// Dipanggil saat banned: reset skor tampilan ke nilai server yang sebenarnya
+async function forceRefreshScore() {
+    try {
+        const r = await fetch('/api/me/' + user.id);
+        const d = await r.json();
+        const serverScore = parseInt(d.total_score) || 0;
+        // Reset ke skor server — tap yang rejected tidak dihitung
+        score = serverScore;
+        pendingTaps = 0;
+        document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
+        myRank = d.rank;
+        document.getElementById('my-rank-info').innerText = '📊 Posisi: #' + myRank;
+        // Refresh leaderboard juga jika sedang ditampilkan
+        if (document.getElementById('screen-leaderboard').classList.contains('active')) {
+            fetchLeaderboard();
+        }
+    } catch {}
+}
+
 // ─── SYNC ─────────────────────────────────────────────────────────────────────
 setInterval(async () => {
     if (pendingTaps <= 0) return;
@@ -439,11 +459,14 @@ setInterval(async () => {
         });
         const d = await r.json();
         if (r.status === 429) {
-            tg.showAlert('⚠️ '+d.error);
+            // ── BUG FIX: saat banned, buang semua pending tap lalu
+            //    paksa sinkronisasi skor dari server agar tampilan depan
+            //    kembali ke nilai yang diakui server (bukan nilai lokal).
+            tg.showAlert('⚠️ ' + d.error);
             pendingTaps = 0;
+            await forceRefreshScore();
         } else if (d.success) {
             // Sinkronkan skor dari server + tap yang belum terkirim
-            // Gunakan nilai server hanya jika selisihnya wajar (menghindari flicker mundur)
             const serverScore = d.total_score + pendingTaps;
             if (serverScore >= score) score = serverScore;
             document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
@@ -530,7 +553,7 @@ function startLive() {
     liveInterval = setInterval(() => {
         fetchMe(); // hanya update rank, tidak flicker skor
         if (document.getElementById('screen-leaderboard').classList.contains('active')) fetchLeaderboard();
-    }, 4000); // sedikit lebih lambat agar lebih hemat
+    }, 4000);
 }
 
 // ─── FETCH STATE ──────────────────────────────────────────────────────────────
