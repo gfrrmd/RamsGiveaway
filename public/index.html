@@ -1,1 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>RamsGiveaway</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary: #007aff;
+            --bg-dark: #09090b;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --text-muted: #8e8e93;
+            --app-height: var(--tg-viewport-stable-height, 100vh); 
+        }
 
+        body {
+            background-color: var(--bg-dark); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0; height: var(--app-height); width: 100vw; overflow: hidden; touch-action: none; display: flex; flex-direction: column;
+        }
+
+        .screen { display: none; flex-direction: column; align-items: center; padding: 20px; height: 100%; box-sizing: border-box; overflow-y: auto; padding-bottom: 100px; }
+        .screen.active { display: flex; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .glass {
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 20px; 
+            padding: 20px; width: 100%; max-width: 500px; box-sizing: border-box; 
+            margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .login-btn, .claim-btn {
+            background: linear-gradient(135deg, #007aff, #005bb5); border: none; border-radius: 16px; padding: 18px;
+            color: white; font-size: 1.1rem; font-weight: bold; width: 100%; max-width: 320px; margin-top: 20px;
+            box-shadow: 0 10px 20px rgba(0,122,255,0.3); cursor: pointer; transition: 0.2s;
+        }
+        .claim-btn { background: linear-gradient(135deg, #34c759, #28a745); box-shadow: 0 10px 20px rgba(40,167,69,0.3); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .login-btn:active, .claim-btn:active { transform: scale(0.95); }
+        
+        .score-val { font-size: clamp(3rem, 10vw, 4.5rem); font-weight: 900; background: linear-gradient(to bottom, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;}
+        .rank-badge { background: rgba(0,122,255,0.15); border: 1px solid rgba(0,122,255,0.3); color: #007aff; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; display: inline-block; margin-bottom: 10px;}
+        
+        .tap-btn {
+            width: 50vw; height: 50vw; max-width: 250px; max-height: 250px; min-width: 180px; min-height: 180px;
+            background: linear-gradient(145deg, #151518, #222228); border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 15px 15px 40px #040405, -15px -15px 40px #14141b, inset 0px 0px 20px rgba(255, 69, 58, 0.2);
+            margin: auto; user-select: none; transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+        }
+        .tap-btn.bouncing {
+            transform: scale(0.85); box-shadow: 5px 5px 15px #040405, -5px -5px 15px #14141b, inset 0px 0px 40px rgba(255, 69, 58, 0.6);
+        }
+
+        .floating-text { position: absolute; font-size: 2rem; font-weight: 900; color: #ff9f0a; text-shadow: 0 0 20px #ff453a; pointer-events: none; animation: floatUpSmoother 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes floatUpSmoother { 0% { opacity: 1; transform: translateY(0) scale(0.8); } 50% { transform: translateY(-60px) scale(1.2); } 100% { opacity: 0; transform: translateY(-100px) scale(1); } }
+
+        .nav-bar { display: flex; background: rgba(9,9,11,0.95); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); padding: 15px; padding-bottom: env(safe-area-inset-bottom, 20px); position: fixed; bottom: 0; left:0; width: 100vw; box-sizing: border-box; justify-content: space-around; z-index: 100; }
+        .nav-item { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; text-align: center; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); text-shadow: 0 0 15px rgba(0,122,255,0.5); }
+        
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .modal-overlay.show { display: flex; }
+        input { width: 100%; padding: 14px; border-radius: 12px; margin-bottom: 15px; border: none; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border); outline: none; box-sizing: border-box; font-family: inherit;}
+        button.admin-btn { width: 100%; padding: 14px; border-radius: 12px; margin-bottom: 10px; background: var(--primary); color: #fff; font-weight: bold; border: none; cursor: pointer; box-sizing: border-box;}
+        button.admin-btn.danger { background: #ff453a; }
+        button.admin-btn.warning { background: #ff9f0a; }
+        button.admin-btn.success { background: #34c759; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN 1: SPLASH -->
+    <div id="screen-login" class="screen active" style="justify-content: center;">
+        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:15px; filter: drop-shadow(0 0 25px rgba(255,69,58,0.6));">
+          <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
+          <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
+        </svg>
+        <h1 style="margin:0; font-size: 2.2rem; background: linear-gradient(135deg, #fff, #ff9f0a); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">RamsGiveaway</h1>
+        
+        <div class="glass" style="margin-top: 25px; text-align: left; line-height: 1.5; font-size: 0.95rem;">
+            <ul style="padding-left: 20px; color: var(--text-muted);">
+                <li style="margin-bottom: 10px;"><b>Tap Cepat:</b> Sentuh api berkali-kali untuk poin.</li>
+                <li style="margin-bottom: 10px;"><b>Peringkat 1:</b> Hanya peringkat 1 yang mendapat akses tombol klaim hadiah di akhir sesi!</li>
+            </ul>
+        </div>
+        <button class="login-btn" onclick="performLogin()">🔥 Mulai Bermain</button>
+    </div>
+
+    <!-- SCREEN 2: GAMEPLAY -->
+    <div id="screen-game" class="screen">
+        <div class="glass" style="text-align: center; border-radius: 25px;">
+            <div style="color: var(--text-muted); font-size: 0.9rem; font-weight: bold; text-transform: uppercase;">Total Skor</div>
+            <div class="score-val" id="score-display">0</div>
+            <div id="my-rank-info" class="rank-badge">Posisimu: Sedang memuat...</div>
+            <br>
+            <div id="session-timer" style="font-size: 0.9rem; font-weight:bold; color: #ff9f0a; margin-top: 5px; background: rgba(255, 159, 10, 0.1); padding: 8px 15px; border-radius: 20px; display: inline-block;">Menghitung Sesi...</div>
+        </div>
+        
+        <!-- PENGUMUMAN JUARA (Muncul jika sesi habis & user ini rank 1) -->
+        <div id="winner-banner" class="glass" style="display: none; text-align: center; border-color: #34c759; background: rgba(52, 199, 89, 0.1);">
+            <h2 style="margin-top:0; color: #34c759;">🎉 SELAMAT! KAMU JUARA 1!</h2>
+            <p style="font-size: 0.9rem;">Waktu telah habis dan kamu mempertahankan posisi puncak!</p>
+            <button class="claim-btn" onclick="claimReward()">🎁 KLAIM HADIAH</button>
+        </div>
+
+        <div class="tap-btn" id="tap-btn">
+            <!-- SVG Api -->
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 15px rgba(255,69,58,0.8)); pointer-events: none;">
+              <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
+              <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: LEADERBOARD -->
+    <div id="screen-leaderboard" class="screen">
+        <div class="glass" style="max-width: 600px;">
+            <h2 style="margin-top:0; text-align: center;">🏆 Papan Peringkat</h2>
+            <div id="lb-list" style="width: 100%;">Loading...</div>
+        </div>
+    </div>
+
+    <!-- SCREEN 4: ADMIN -->
+    <div id="screen-admin" class="screen">
+        <div class="glass" style="max-width: 600px;">
+            <h2 style="margin-top:0; color:var(--primary);">⚙️ Konfigurasi URL & Waktu</h2>
+            <label style="color: var(--text-muted); font-size: 0.8rem; display:block;">Link Redirect Untuk Juara 1:</label>
+            <input type="url" id="admin-link" placeholder="https://t.me/GrupVIP...">
+            
+            <label style="color: var(--text-muted); font-size: 0.8rem; display:block;">Batas Akhir Sesi:</label>
+            <input type="datetime-local" id="admin-end-time">
+            
+            <button class="admin-btn" onclick="adminAction('update_config')">💾 Simpan Konfigurasi Saja</button>
+        </div>
+
+        <div class="glass" style="max-width: 600px;">
+            <h2 style="margin-top:0; color:var(--primary);">🕹️ Kontrol Sesi</h2>
+            <div class="grid-2">
+                <button class="admin-btn success" onclick="adminAction('start')">▶️ Mulai Sesi</button>
+                <button class="admin-btn warning" onclick="adminAction('end')">⏹️ Akhiri Sesi</button>
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 15px 0;">
+            <button class="admin-btn danger" onclick="adminAction('reset')">🔄 Reset Sesi (Simpan History Juara)</button>
+            <button class="admin-btn" style="background:#8e8e93;" onclick="adminAction('delete')">🗑️ Hapus Sesi (Bersihkan Total Database)</button>
+        </div>
+    </div>
+
+    <!-- MODAL PASSWORD -->
+    <div id="pwd-modal" class="modal-overlay">
+        <div class="glass" style="width: 85%; max-width: 320px; text-align: center;">
+            <h3 style="margin-top:0;">🔒 Akses Admin</h3>
+            <input type="password" id="admin-pwd-input" placeholder="Password...">
+            <div class="grid-2" style="margin-top:10px;">
+                <button class="admin-btn" style="background:#2c2c2e;" onclick="document.getElementById('pwd-modal').classList.remove('show')">Batal</button>
+                <button class="admin-btn" onclick="verifyAdmin()">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="nav-bar" id="navbar" style="display: none;">
+        <div class="nav-item active" onclick="switchTab('game', this)">🎮 Game</div>
+        <div class="nav-item" onclick="switchTab('leaderboard', this)">🏆 Rank</div>
+        <div class="nav-item" onclick="promptAdminModal(this)">⚙️ Admin</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#09090b');
+
+        let score = 0, pendingTaps = 0, lastTapTime = 0;
+        let isActiveSession = true;
+        let myRank = '-';
+        let winnerLinkURL = '';
+        let storedAdminPassword = "", tempNavElement = null;
+        
+        const user = tg.initDataUnsafe?.user || { id: 'demo123', first_name: 'Pemain', username: 'demo' };
+
+        function performLogin() {
+            document.getElementById('screen-login').classList.remove('active');
+            document.getElementById('screen-game').classList.add('active');
+            document.getElementById('navbar').style.display = 'flex';
+            fetchState();
+        }
+
+        function switchTab(tab, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`screen-${tab}`).classList.add('active');
+            el.classList.add('active');
+            if (tab === 'leaderboard') fetchLeaderboard();
+        }
+
+        function promptAdminModal(el) {
+            if(storedAdminPassword === 'RamaGanteng') switchTab('admin', el);
+            else { tempNavElement = el; document.getElementById('pwd-modal').classList.add('show'); document.getElementById('admin-pwd-input').value = ""; }
+        }
+
+        function verifyAdmin() {
+            const pwd = document.getElementById('admin-pwd-input').value;
+            if(pwd === 'RamaGanteng') {
+                storedAdminPassword = pwd;
+                document.getElementById('pwd-modal').classList.remove('show');
+                switchTab('admin', tempNavElement);
+            } else tg.showAlert("❌ Sandi Salah!");
+        }
+
+        // Tap Logic
+        const tapBtn = document.getElementById('tap-btn');
+        tapBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if(!isActiveSession) return tg.showAlert("Sesi saat ini sedang ditutup/berakhir!");
+
+            const now = Date.now();
+            if (now - lastTapTime < 40) return; 
+            lastTapTime = now;
+
+            tapBtn.classList.add('bouncing');
+            setTimeout(() => tapBtn.classList.remove('bouncing'), 100);
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                score++; pendingTaps++;
+                document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
+                tg.HapticFeedback.impactOccurred('rigid');
+                createFloatingText(touch.clientX + ((Math.random() - 0.5) * 40), touch.clientY - 20);
+            }
+        }, { passive: false });
+
+        function createFloatingText(x, y) {
+            const floatEl = document.createElement('div');
+            floatEl.className = 'floating-text';
+            floatEl.innerText = '+1';
+            floatEl.style.left = `${x - 20}px`; floatEl.style.top = `${y - 40}px`;
+            document.body.appendChild(floatEl);
+            setTimeout(() => floatEl.remove(), 700);
+        }
+
+        // Background Sync
+        setInterval(async () => {
+            if (pendingTaps > 0) {
+                const taps = pendingTaps; pendingTaps = 0;
+                try {
+                    const res = await fetch('/api/save-score', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tg_id: user.id.toString(), username: user.username || '', first_name: user.first_name, taps })
+                    });
+                    const data = await res.json();
+                    if (res.status === 429) { tg.showAlert("⚠️ Anti-Cheat Aktif!"); pendingTaps = 0; } 
+                    else if (data.success) { 
+                        score = data.total_score + pendingTaps; 
+                        document.getElementById('score-display').innerText = score.toLocaleString('id-ID'); 
+                        fetchMe(); // Update Posisi Rank
+                    }
+                } catch (e) { pendingTaps += taps; }
+            }
+        }, 3000);
+
+        async function fetchMe() {
+            try {
+                const res = await fetch('/api/me/' + user.id);
+                const data = await res.json();
+                myRank = data.rank;
+                document.getElementById('my-rank-info').innerText = `Posisimu: #${myRank}`;
+                checkWinnerStatus();
+            } catch(e){}
+        }
+
+        function checkWinnerStatus() {
+            // Jika sesi sudah tidak aktif dan user ada di rank 1, tampilkan tombol klaim
+            if (!isActiveSession && myRank == 1) {
+                document.getElementById('winner-banner').style.display = 'block';
+                document.getElementById('tap-btn').style.display = 'none'; // Sembunyikan tombol api
+            } else {
+                document.getElementById('winner-banner').style.display = 'none';
+                document.getElementById('tap-btn').style.display = 'flex';
+            }
+        }
+
+        function claimReward() {
+            if (winnerLinkURL) {
+                tg.openLink(winnerLinkURL); // Buka link lewat browser/Telegram internal
+            } else {
+                tg.showAlert("Link hadiah belum disiapkan oleh admin.");
+            }
+        }
+
+        async function fetchLeaderboard() {
+            const res = await fetch('/api/leaderboard');
+            const data = await res.json();
+            const list = document.getElementById('lb-list');
+            list.innerHTML = '';
+            data.forEach((p, i) => {
+                let badge = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+                let isMe = p.tg_id === user.id.toString();
+                list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:15px 10px; border-bottom:1px solid rgba(255,255,255,0.1); ${isMe ? 'background:rgba(0,122,255,0.15); border-radius:10px;' : ''} width:100%; box-sizing:border-box;">
+                    <div><b>${badge} ${p.first_name}</b> ${isMe ? '(Anda)' : ''}<br><small style="color:#8e8e93">@${p.username}</small></div>
+                    <div style="font-weight:bold; color:#ff9f0a;">${parseInt(p.total_score).toLocaleString('id-ID')}</div></div>`;
+            });
+        }
+
+        async function fetchState() {
+            const res = await fetch('/api/state');
+            const data = await res.json();
+            isActiveSession = data.isActive;
+            winnerLinkURL = data.winnerLink;
+            
+            // Isi form admin jika kosong
+            if (!document.getElementById('admin-link').value) document.getElementById('admin-link').value = winnerLinkURL || "";
+            
+            if(data.endTime) {
+                const end = new Date(data.endTime).getTime();
+                // Update timer UI every second
+                setInterval(() => {
+                    const distance = end - new Date().getTime();
+                    if (distance < 0 || !isActiveSession) {
+                        document.getElementById('session-timer').innerText = "🔴 Sesi Berakhir";
+                        isActiveSession = false;
+                        checkWinnerStatus();
+                    } else {
+                        const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((distance % (1000 * 60)) / 1000);
+                        document.getElementById('session-timer').innerText = `⏳ Sisa: ${h}j ${m}m ${s}d`;
+                        checkWinnerStatus();
+                    }
+                }, 1000);
+            } else if (!isActiveSession) {
+                 document.getElementById('session-timer').innerText = "🔴 Sesi Ditutup Sementara";
+                 checkWinnerStatus();
+            }
+            
+            fetchMe(); // Panggil sekali di awal untuk cek posisi
+        }
+
+        async function adminAction(actionType) {
+            let msg = "Yakin ingin mengeksekusi perintah ini?";
+            if (actionType === 'reset') msg = "Yakin RESET? Semua skor akan jadi 0, tapi sejarah juara #1 akan disimpan.";
+            if (actionType === 'delete') msg = "Yakin HAPUS TOTAL? Semua skor dan data juara akan dilenyapkan dari database.";
+            
+            const performRequest = async () => {
+                const payload = { 
+                    action: actionType,
+                    endTime: document.getElementById('admin-end-time').value ? new Date(document.getElementById('admin-end-time').value).toISOString() : undefined,
+                    winnerLink: document.getElementById('admin-link').value || undefined
+                };
+
+                const res = await fetch('/api/admin/action', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': storedAdminPassword },
+                    body: JSON.stringify(payload)
+                });
+
+                if(res.ok) { 
+                    tg.showAlert("✅ Aksi Berhasil!"); 
+                    if(actionType !== 'update_config') window.location.reload(); 
+                    else fetchState();
+                } else {
+                    tg.showAlert("❌ Gagal / Akses ditolak.");
+                }
+            };
+
+            if (['reset', 'delete', 'end'].includes(actionType)) {
+                tg.showConfirm(msg, async (valid) => { if(valid) performRequest(); });
+            } else {
+                performRequest();
+            }
+        }
+    </script>
+</body>
+</html>
