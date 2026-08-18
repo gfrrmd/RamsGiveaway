@@ -15,15 +15,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── ANTI-CHEAT CONFIG ───────────────────────────────────────────────────────
 const AC = {
-    MAX_TAPS_PER_REQUEST : 20,    // maks tap per sync (3 detik → ~6-7 TPS normal)
-    MAX_TPS_INSTANT      : 8,     // maks TPS dalam 1 interval
-    MAX_SCORE_PER_MINUTE : 400,   // skor wajar per menit
+    MAX_TAPS_PER_REQUEST : 20,
+    MAX_TPS_INSTANT      : 8,
+    MAX_SCORE_PER_MINUTE : 400,
     VELOCITY_WINDOW_MS   : 60000,
     MAX_STRIKES          : 3,
-    BAN_DURATION_MS      : 300000, // 5 menit
-    // Interval tap (dikirim client)
-    MIN_INTERVAL_STDDEV  : 60,    // ms — std-dev interval tap < nilai ini = sangat curiga
-    MIN_SAMPLES_FOR_INTERVAL: 8,  // minimal sample interval sebelum dicek
+    BAN_DURATION_MS      : 300000,
 };
 
 const userSyncData = {};
@@ -31,35 +28,24 @@ const userSyncData = {};
 function getOrInitUser(tg_id, now) {
     if (!userSyncData[tg_id]) {
         userSyncData[tg_id] = {
-            lastSync       : now - 3000,
-            scoreThisWindow: 0,
-            windowStart    : now,
-            strikes        : 0,
-            bannedUntil    : 0,
-            syncHistory    : [],   // { time, taps, elapsed } — untuk cek pola sync
-            intervalBuffer : [],   // interval antar-tap (ms) dikirim client
+            lastSync        : now - 3000,
+            scoreThisWindow : 0,
+            windowStart     : now,
+            strikes         : 0,
+            bannedUntil     : 0,
+            syncHistory     : [],
         };
     }
     return userSyncData[tg_id];
 }
 
-/**
- * Hitung std-dev dari array angka.
- */
 function stdDev(arr) {
     if (arr.length < 2) return Infinity;
     const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
     return Math.sqrt(arr.reduce((a, b) => a + (b - avg) ** 2, 0) / arr.length);
 }
 
-/**
- * Multi-layer anti-cheat.
- * @param {string} tg_id
- * @param {number} taps
- * @param {number} now   - Date.now()
- * @param {number[]} tapIntervals - array interval antar-tap (ms) dari client (bisa kosong)
- */
-function checkAntiCheat(tg_id, taps, now, tapIntervals) {
+function checkAntiCheat(tg_id, taps, now) {
     const ud = getOrInitUser(tg_id, now);
 
     // 1. BAN CHECK
@@ -93,7 +79,7 @@ function checkAntiCheat(tg_id, taps, now, tapIntervals) {
         return { blocked: true, reason: `Anti-cheat: skor per menit terlalu tinggi.` };
     }
 
-    // 5. SYNC-LEVEL BURST PATTERN (interval antar sync request)
+    // 5. SYNC-LEVEL BURST PATTERN
     ud.syncHistory.push({ time: now, taps, elapsed });
     if (ud.syncHistory.length > 8) ud.syncHistory.shift();
     if (ud.syncHistory.length >= 6) {
@@ -101,37 +87,12 @@ function checkAntiCheat(tg_id, taps, now, tapIntervals) {
         for (let i = 1; i < ud.syncHistory.length; i++)
             syncIntervals.push(ud.syncHistory[i].time - ud.syncHistory[i-1].time);
         const sd = stdDev(syncIntervals);
-        // Sync request yang sangat konsisten (< 80ms std-dev) dengan interval < 3.5 detik = bot
         if (sd < 80 && (syncIntervals.reduce((a,b)=>a+b,0)/syncIntervals.length) < 3500) {
             if (++ud.strikes >= AC.MAX_STRIKES) ud.bannedUntil = now + AC.BAN_DURATION_MS;
             return { blocked: true, reason: `Anti-cheat: pola sync otomatis terdeteksi.` };
         }
     }
 
-    // 6. TAP-LEVEL INTERVAL ANALYSIS (dari data yang dikirim client)
-    //    Client mengirim array interval antar-tap dalam batch ini.
-    //    Auto-clicker menghasilkan interval yang SANGAT seragam (mis. selalu 100ms ± 5ms).
-    //    Manusia asli memiliki variasi > 60ms std-dev.
-    if (Array.isArray(tapIntervals) && tapIntervals.length >= AC.MIN_SAMPLES_FOR_INTERVAL) {
-        // Tambahkan ke buffer per-user
-        ud.intervalBuffer.push(...tapIntervals);
-        if (ud.intervalBuffer.length > 50) ud.intervalBuffer.splice(0, ud.intervalBuffer.length - 50);
-
-        if (ud.intervalBuffer.length >= AC.MIN_SAMPLES_FOR_INTERVAL) {
-            const sd = stdDev(ud.intervalBuffer);
-            const avg = ud.intervalBuffer.reduce((a,b)=>a+b,0) / ud.intervalBuffer.length;
-            // Curiga jika std-dev rendah DAN interval rata-rata < 300ms (tap cepat tapi seragam)
-            if (sd < AC.MIN_INTERVAL_STDDEV && avg < 300) {
-                if (++ud.strikes >= AC.MAX_STRIKES) ud.bannedUntil = now + AC.BAN_DURATION_MS;
-                return {
-                    blocked: true,
-                    reason: `Anti-cheat: interval tap terlalu konsisten (stdDev=${sd.toFixed(1)}ms, avg=${avg.toFixed(0)}ms). Terdeteksi auto-click.`
-                };
-            }
-        }
-    }
-
-    // Lulus semua cek
     ud.lastSync = now;
     return { blocked: false };
 }
@@ -147,13 +108,10 @@ let gameState = {
     sessionId : 0
 };
 
-let autoEndTimer = null; // setInterval/setTimeout handle
+let autoEndTimer = null;
 
-/**
- * Fungsi end-session yang dipanggil baik oleh admin maupun auto-timer.
- */
 async function endSession() {
-    if (!gameState.isActive) return; // sudah berakhir, skip
+    if (!gameState.isActive) return;
     gameState.isActive = false;
     gameState.endTime  = new Date().toISOString();
     if (autoEndTimer) { clearTimeout(autoEndTimer); autoEndTimer = null; }
@@ -186,21 +144,13 @@ async function endSession() {
     }
 }
 
-/**
- * Jadwalkan auto-end berdasarkan endTime di gameState.
- * Dipanggil setiap kali endTime diperbarui atau sesi dimulai.
- */
 function scheduleAutoEnd() {
     if (autoEndTimer) { clearTimeout(autoEndTimer); autoEndTimer = null; }
     if (!gameState.endTime || !gameState.isActive) return;
     const delay = new Date(gameState.endTime).getTime() - Date.now();
-    if (delay <= 0) {
-        // Waktu sudah lewat, langsung akhiri
-        endSession();
-        return;
-    }
+    if (delay <= 0) { endSession(); return; }
     autoEndTimer = setTimeout(() => endSession(), delay);
-    console.log(`[autoEnd] Sesi akan otomatis berakhir dalam ${Math.round(delay/1000)}s`);
+    console.log(`[autoEnd] Sesi otomatis berakhir dalam ${Math.round(delay/1000)}s`);
 }
 
 // ─── API STATE ───────────────────────────────────────────────────────────────
@@ -238,15 +188,15 @@ app.get('/api/me/:tg_id', async (req, res) => {
     } catch { res.status(500).json({ error: 'Server Error' }); }
 });
 
-// ─── API SAVE SCORE ──────────────────────────────────────────────────────────
+// ─── API SAVE SCORE ───────────────────────────────────────────────────────────
 app.post('/api/save-score', async (req, res) => {
-    const { tg_id, username, first_name, taps, tapIntervals } = req.body;
+    const { tg_id, username, first_name, taps } = req.body;
     if (!tg_id || taps === undefined) return res.status(400).json({ error: 'Data tidak valid' });
     if (!gameState.isActive)          return res.status(403).json({ error: 'Sesi telah berakhir' });
     if (typeof taps !== 'number' || taps <= 0) return res.status(400).json({ error: 'Jumlah tap tidak valid' });
 
     const now   = Date.now();
-    const check = checkAntiCheat(tg_id, taps, now, tapIntervals || []);
+    const check = checkAntiCheat(tg_id, taps, now);
     if (check.blocked) return res.status(429).json({ error: check.reason, cheat: true });
 
     try {
@@ -277,29 +227,28 @@ app.get('/api/claim/:token', (req, res) => {
     const { token } = req.params;
     const { tg_id } = req.query;
     const win = winHistory.find(w => w.token === token);
-    if (!win)            return res.status(403).send('<h2>Token tidak valid atau tidak ditemukan.</h2>');
+    if (!win)                return res.status(403).send('<h2>Token tidak valid atau tidak ditemukan.</h2>');
     if (win.tg_id !== tg_id) return res.status(403).send('<h2>Akses ditolak. Token ini bukan milikmu.</h2>');
-    if (win.tokenUsed)   return res.status(410).send('<h2>Link klaim ini sudah pernah digunakan.</h2>');
-    if (!win.link)       return res.status(404).send('<h2>Link hadiah belum disiapkan admin.</h2>');
+    if (win.tokenUsed)       return res.status(410).send('<h2>Link klaim ini sudah pernah digunakan.</h2>');
+    if (!win.link)           return res.status(404).send('<h2>Link hadiah belum disiapkan admin.</h2>');
     win.tokenUsed = true;
     res.redirect(win.link);
 });
 
-// ─── ADMIN MIDDLEWARE ────────────────────────────────────────────────────────
+// ─── ADMIN MIDDLEWARE ─────────────────────────────────────────────────────────
 const isAdmin = (req, res, next) => {
     if (req.headers['x-admin-password'] !== ADMIN_PASSWORD)
         return res.status(403).json({ error: 'Akses Ditolak!' });
     next();
 };
 
-// ─── API ADMIN ACTION ────────────────────────────────────────────────────────
+// ─── API ADMIN ACTION ─────────────────────────────────────────────────────────
 app.post('/api/admin/action', isAdmin, async (req, res) => {
     const { action, endTime, winnerLink } = req.body;
     try {
         if (action === 'update_config') {
-            if (endTime    !== undefined) gameState.endTime     = endTime;
-            if (winnerLink !== undefined) gameState.winnerLink  = winnerLink;
-            // Jadwal ulang auto-end jika endTime berubah
+            if (endTime    !== undefined) gameState.endTime    = endTime;
+            if (winnerLink !== undefined) gameState.winnerLink = winnerLink;
             scheduleAutoEnd();
         }
         else if (action === 'start') {
@@ -309,10 +258,10 @@ app.post('/api/admin/action', isAdmin, async (req, res) => {
             gameState.sessionId += 1;
             if (endTime    !== undefined) gameState.endTime    = endTime;
             if (winnerLink !== undefined) gameState.winnerLink = winnerLink;
-            scheduleAutoEnd(); // jadwalkan auto-end berdasarkan endTime
+            scheduleAutoEnd();
         }
         else if (action === 'end') {
-            await endSession(); // panggil fungsi shared
+            await endSession();
         }
         else if (action === 'reset') {
             const top = await db.query(`SELECT first_name, total_score, tg_id FROM users ORDER BY total_score DESC LIMIT 1`);

@@ -226,11 +226,6 @@
         <h3 style="color:#aeaeb2;">Sesi Belum Dimulai</h3>
         <p>Tunggu admin memulai sesi.</p>
     </div>
-    <div id="banner-ended" class="banner idle" style="display:none;">
-        <div style="font-size:2rem;">🔴</div>
-        <h3 style="color:#aeaeb2;">Sesi Telah Berakhir</h3>
-        <p>Pantau info sesi berikutnya.</p>
-    </div>
     <div id="banner-loser" class="banner loser" style="display:none;">
         <div style="font-size:2rem;">😔</div>
         <h3 style="color:#ff9f0a;">Belum Beruntung</h3>
@@ -345,12 +340,8 @@ let score = 0, pendingTaps = 0;
 let isActiveSession = false, sessionLoaded = false, hasEndTime = false;
 let myRank = '-';
 let storedAdminPassword = '', tempNavElement = null;
-let liveInterval = null;
-let timerTick = null;
-
-// --- Anti-cheat: rekam interval tap di client ---
-let lastTapTimestamp = 0;
-let tapIntervalBuffer = []; // kirim ke server tiap sync
+let liveInterval = null, timerTick = null;
+let scoreInitialized = false; // true setelah skor pertama kali dimuat dari server
 
 const realUser = tg.initDataUnsafe?.user;
 const user = realUser || { id:'guest_'+Math.random().toString(36).slice(2), first_name:'Tamu', username:'guest' };
@@ -410,7 +401,7 @@ function refreshAdminPanel() {
     }
 }
 
-// --- TAP ---
+// ─── TAP ─────────────────────────────────────────────────────────────────────
 let tapRateCount = 0;
 setInterval(() => { tapRateCount = 0; }, 1000);
 document.addEventListener('contextmenu', e => e.preventDefault());
@@ -422,15 +413,8 @@ tapBtn.addEventListener('touchstart', e => {
     if (tapRateCount >= 10) return;
     tapBtn.classList.add('bouncing');
     setTimeout(() => tapBtn.classList.remove('bouncing'), 100);
-    const now = Date.now();
     for (let i=0; i<e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
-        // Rekam interval antar-tap
-        if (lastTapTimestamp > 0) {
-            const interval = now - lastTapTimestamp;
-            if (interval < 1000) tapIntervalBuffer.push(interval); // abaikan jeda > 1 detik
-        }
-        lastTapTimestamp = now;
         tapRateCount++; score++; pendingTaps++;
         document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
         tg.HapticFeedback.impactOccurred('rigid');
@@ -444,44 +428,49 @@ function spawnFloat(x, y) {
     document.body.appendChild(el); setTimeout(()=>el.remove(), 620);
 }
 
-// --- SYNC (kirim tapIntervals ke server) ---
+// ─── SYNC ─────────────────────────────────────────────────────────────────────
 setInterval(async () => {
     if (pendingTaps <= 0) return;
     const taps = Math.min(pendingTaps, 20); pendingTaps -= taps;
-    const intervals = tapIntervalBuffer.splice(0, tapIntervalBuffer.length); // ambil & kosongkan
     try {
         const r = await fetch('/api/save-score', {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ tg_id:user.id.toString(), username:user.username||'', first_name:user.first_name, taps, tapIntervals: intervals })
+            body: JSON.stringify({ tg_id:user.id.toString(), username:user.username||'', first_name:user.first_name, taps })
         });
         const d = await r.json();
         if (r.status === 429) {
             tg.showAlert('⚠️ '+d.error);
-            pendingTaps = 0; tapIntervalBuffer.length = 0;
+            pendingTaps = 0;
         } else if (d.success) {
-            score = d.total_score + pendingTaps;
+            // Sinkronkan skor dari server + tap yang belum terkirim
+            // Gunakan nilai server hanya jika selisihnya wajar (menghindari flicker mundur)
+            const serverScore = d.total_score + pendingTaps;
+            if (serverScore >= score) score = serverScore;
             document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
         }
-    } catch { pendingTaps += taps; tapIntervalBuffer.push(...intervals); }
+    } catch { pendingTaps += taps; }
 }, 3000);
 
-// --- FETCH ME ---
+// ─── FETCH ME (hanya rank, TIDAK update skor agar tidak flicker) ─────────────
 async function fetchMe() {
     try {
         const r=await fetch('/api/me/'+user.id); const d=await r.json();
         myRank = d.rank;
-        if (d.total_score !== undefined && score===0 && pendingTaps===0) {
-            score = parseInt(d.total_score)||0;
+        // Inisialisasi skor pertama kali saja (sebelum user mulai tap)
+        if (!scoreInitialized) {
+            score = parseInt(d.total_score) || 0;
+            pendingTaps = 0;
             document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
+            scoreInitialized = true;
         }
         document.getElementById('my-rank-info').innerText = '📊 Posisi: #'+myRank;
         updateBanners();
     } catch {}
 }
 
-// --- BANNERS ---
+// ─── BANNERS ──────────────────────────────────────────────────────────────────
 function hideAllBanners() {
-    ['banner-idle','banner-ended','banner-loser','banner-winner'].forEach(id=>document.getElementById(id).style.display='none');
+    ['banner-idle','banner-loser','banner-winner'].forEach(id=>document.getElementById(id).style.display='none');
 }
 async function updateBanners() {
     const tapEl = document.getElementById('tap-btn');
@@ -490,16 +479,12 @@ async function updateBanners() {
     if (isActiveSession) { tapEl.style.display='flex'; return; }
     tapEl.style.display = 'none';
     if (!hasEndTime) { document.getElementById('banner-idle').style.display='block'; return; }
-    // Sesi berakhir — cek kemenangan
     try {
         const r=await fetch('/api/my-wins/'+user.id); const wins=await r.json();
-        const unclaimedOrClaimed = wins.length > 0;
-        if (myRank == 1 || unclaimedOrClaimed) {
+        if (myRank == 1 || wins.length > 0) {
             document.getElementById('banner-winner').style.display='block';
             const claimList = document.getElementById('win-claim-list');
-            claimList.innerHTML = myRank != 1 && unclaimedOrClaimed
-                ? '<p style="color:#86efac;font-size:0.8rem;margin-bottom:8px;">Kamu masih punya hadiah belum diklaim:</p>'
-                : '';
+            claimList.innerHTML = '';
             wins.forEach(w => {
                 const btn=document.createElement('button');
                 btn.className='btn btn-claim'; btn.style.marginTop='6px';
@@ -518,7 +503,7 @@ function claimWin(token, sessionId) {
     tg.openLink(window.location.origin+'/api/claim/'+encodeURIComponent(token)+'?tg_id='+user.id);
 }
 
-// --- LEADERBOARD ---
+// ─── LEADERBOARD ──────────────────────────────────────────────────────────────
 async function fetchLeaderboard() {
     const tbody=document.getElementById('lb-list');
     document.getElementById('lb-live-badge').style.display = isActiveSession?'inline':'none';
@@ -539,22 +524,31 @@ async function fetchLeaderboard() {
     } catch { tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Gagal memuat</td></tr>'; }
 }
 
-// --- LIVE REFRESH ---
+// ─── LIVE REFRESH ─────────────────────────────────────────────────────────────
 function startLive() {
     if (liveInterval) clearInterval(liveInterval);
     liveInterval = setInterval(() => {
-        fetchMe();
+        fetchMe(); // hanya update rank, tidak flicker skor
         if (document.getElementById('screen-leaderboard').classList.contains('active')) fetchLeaderboard();
-    }, 3000);
+    }, 4000); // sedikit lebih lambat agar lebih hemat
 }
 
-// --- FETCH STATE ---
+// ─── FETCH STATE ──────────────────────────────────────────────────────────────
 async function fetchState() {
     try {
         const r=await fetch('/api/state'); const data=await r.json();
+        const wasActive = isActiveSession;
         isActiveSession = data.isActive;
         hasEndTime = !!data.endTime;
         sessionLoaded = true;
+
+        // Reset scoreInitialized jika sesi baru dimulai
+        if (!wasActive && isActiveSession) {
+            scoreInitialized = false;
+            score = 0; pendingTaps = 0;
+            document.getElementById('score-display').innerText = '0';
+        }
+
         setTapEnabled(isActiveSession);
 
         if (data.previousWinner) {
@@ -563,7 +557,6 @@ async function fetchState() {
             document.getElementById('prev-winner-score').innerText=parseInt(data.previousWinner.total_score).toLocaleString('id-ID')+' poin';
         }
 
-        // Setup countdown timer — client-side juga detect habis waktu
         if (timerTick) clearInterval(timerTick);
         const timerEl = document.getElementById('session-timer');
         if (data.endTime) {
@@ -572,13 +565,8 @@ async function fetchState() {
                 const dist = end - Date.now();
                 if (dist <= 0) {
                     clearInterval(timerTick);
-                    // Jika masih tampak aktif di client, fetch state terbaru dari server
-                    if (isActiveSession) {
-                        await fetchState();
-                    } else {
-                        timerEl.className='timer-pill ended';
-                        timerEl.innerText='🔴 Sesi Berakhir';
-                    }
+                    if (isActiveSession) await fetchState();
+                    else { timerEl.className='timer-pill ended'; timerEl.innerText='🔴 Sesi Berakhir'; }
                     return;
                 }
                 const h=Math.floor(dist/3600000),m=Math.floor(dist%3600000/60000),s=Math.floor(dist%60000/1000);
@@ -604,7 +592,7 @@ function setTapEnabled(on) {
     if(on) tapBtn.classList.remove('disabled-tap'); else tapBtn.classList.add('disabled-tap');
 }
 
-// --- ADMIN ACTION ---
+// ─── ADMIN ACTION ─────────────────────────────────────────────────────────────
 async function adminAction(type) {
     const msgs={reset:'Yakin RESET skor?',delete:'Yakin HAPUS TOTAL?',end:'Akhiri sesi lebih awal?'};
     const doReq = async () => {
