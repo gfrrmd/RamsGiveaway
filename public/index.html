@@ -13,333 +13,351 @@
             --glass-border: rgba(255,255,255,0.1);
             --text: #ffffff;
             --text-muted: #8e8e93;
+            --radius: 18px;
             --app-height: var(--tg-viewport-stable-height, 100vh);
         }
-        * { -webkit-tap-highlight-color: transparent; }
+        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            background-color: var(--bg-dark); color: var(--text);
+            background: var(--bg-dark); color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0; padding: 0; height: var(--app-height); width: 100vw;
             overflow: hidden; touch-action: none; display: flex; flex-direction: column;
         }
-        .screen { display: none; flex-direction: column; align-items: center; padding: 20px; height: 100%; box-sizing: border-box; overflow-y: auto; padding-bottom: 100px; }
-        .screen.active { display: flex; animation: fadeIn 0.35s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .screen { display: none; flex-direction: column; align-items: center; padding: 16px; height: 100%; overflow-y: auto; padding-bottom: 90px; }
+        .screen.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
-        .glass {
-            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 20px;
-            padding: 20px; width: 100%; max-width: 500px; box-sizing: border-box;
-            margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        }
-
-        /* ---- LOGIN ---- */
-        .login-btn {
-            background: linear-gradient(135deg, #007aff, #005bb5); border: none; border-radius: 16px; padding: 18px;
-            color: white; font-size: 1.1rem; font-weight: bold; width: 100%; max-width: 320px; margin-top: 20px;
-            box-shadow: 0 10px 20px rgba(0,122,255,0.3); cursor: pointer; transition: transform 0.15s;
-        }
-        .login-btn:active { transform: scale(0.96); }
-
-        /* ---- SCORE CARD ---- */
-        .score-card {
-            background: linear-gradient(145deg, #0f0f13, #1a1a22);
-            border: 1px solid rgba(255,159,10,0.2);
-            border-radius: 28px; padding: 24px 20px;
-            text-align: center; width: 100%; max-width: 500px;
-            box-sizing: border-box; margin-bottom: 15px;
-            box-shadow: 0 0 40px rgba(255,159,10,0.08), 0 8px 30px rgba(0,0,0,0.6);
-            position: relative; overflow: hidden;
-        }
-        .score-card::before {
-            content: ''; position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
-            width: 200px; height: 200px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,69,58,0.12) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .score-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 4px; }
-        .score-val {
-            font-size: clamp(3.2rem, 12vw, 5rem); font-weight: 900; line-height: 1;
-            background: linear-gradient(160deg, #ffffff 0%, #ff9f0a 60%, #ff453a 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 12px; letter-spacing: -2px;
-        }
-        .rank-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(0,122,255,0.12); border: 1px solid rgba(0,122,255,0.25);
-            color: #5ac8fa; padding: 6px 16px; border-radius: 30px;
-            font-size: 0.85rem; font-weight: 700; margin-bottom: 12px;
-        }
-        .session-timer-pill {
-            display: inline-block; font-size: 0.85rem; font-weight: 700;
-            color: #ff9f0a; background: rgba(255,159,10,0.1);
-            border: 1px solid rgba(255,159,10,0.2);
-            padding: 7px 18px; border-radius: 30px;
-        }
-        .session-timer-pill.inactive { color: #ff453a; background: rgba(255,69,58,0.1); border-color: rgba(255,69,58,0.2); }
-
-        /* ---- WINNER / LOSER BANNERS ---- */
-        .claim-btn {
-            background: linear-gradient(135deg, #34c759, #28a745); border: none; border-radius: 14px; padding: 16px;
-            color: white; font-size: 1rem; font-weight: bold; width: 100%; margin-top: 12px;
-            box-shadow: 0 8px 20px rgba(40,167,69,0.35); cursor: pointer;
-            animation: pulse 1.8s infinite;
-            /* SECURITY: prevent context menu on long press */
-            -webkit-user-select: none; user-select: none;
-            -webkit-touch-callout: none;
-        }
-        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
-        .claim-btn:active { transform: scale(0.95) !important; animation: none; }
-
-        /* ---- TAP BTN ---- */
-        .tap-btn {
-            width: 50vw; height: 50vw; max-width: 240px; max-height: 240px; min-width: 170px; min-height: 170px;
-            background: linear-gradient(145deg, #151518, #222228); border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 14px 14px 38px #040405, -14px -14px 38px #14141b, inset 0 0 18px rgba(255,69,58,0.15);
-            margin: auto; user-select: none; touch-action: none;
-            transition: transform 0.1s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.15s ease;
-            -webkit-touch-callout: none;
-        }
-        .tap-btn.bouncing { transform: scale(0.84); box-shadow: 4px 4px 12px #040405, -4px -4px 12px #14141b, inset 0 0 36px rgba(255,69,58,0.55); }
-        .tap-btn.disabled-tap { opacity: 0.35; cursor: not-allowed; }
-
-        .floating-text { position: absolute; font-size: 1.8rem; font-weight: 900; color: #ff9f0a; text-shadow: 0 0 18px #ff453a; pointer-events: none; animation: floatUp 0.65s ease forwards; }
-        @keyframes floatUp { 0% { opacity:1; transform: translateY(0) scale(0.8); } 60% { transform: translateY(-55px) scale(1.15); } 100% { opacity:0; transform: translateY(-95px) scale(1); } }
-
-        /* ---- PREVIOUS WINNER CARD ---- */
-        .prev-winner-card {
-            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,159,10,0.05));
-            border: 1px solid rgba(255,215,0,0.2); border-radius: 16px;
-            padding: 14px 18px; display: flex; align-items: center; gap: 12px;
-            width: 100%; max-width: 500px; box-sizing: border-box; margin-bottom: 15px;
-        }
-        .prev-winner-avatar {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: linear-gradient(135deg,#ff9f0a,#ff453a);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; flex-shrink: 0;
+        /* CARD */
+        .card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: var(--radius); padding: 18px;
+            width: 100%; max-width: 500px; margin-bottom: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35);
         }
 
-        /* ---- LEADERBOARD ---- */
-        .lb-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06);
-            width: 100%; box-sizing: border-box; border-radius: 10px;
-            transition: background 0.2s;
-        }
-        .lb-row.me { background: rgba(0,122,255,0.12); }
-        .lb-row:last-child { border-bottom: none; }
-
-        /* ---- NAV BAR ---- */
-        .nav-bar {
-            display: flex; background: rgba(9,9,11,0.96); backdrop-filter: blur(18px);
-            border-top: 1px solid var(--glass-border);
-            padding: 10px 0; padding-bottom: env(safe-area-inset-bottom, 16px);
-            position: fixed; bottom: 0; left: 0; width: 100vw; box-sizing: border-box;
-            justify-content: space-around; z-index: 100;
-        }
-        .nav-item {
-            color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
-            text-align: center; cursor: pointer; transition: 0.25s;
-            display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 12px;
-        }
-        .nav-item .nav-icon { font-size: 1.35rem; }
-        .nav-item.active { color: var(--primary); }
-        .nav-item.active .nav-icon { filter: drop-shadow(0 0 6px rgba(0,122,255,0.7)); }
-
-        /* ---- MODAL ---- */
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.82); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-        .modal-overlay.show { display: flex; }
-
-        /* ---- INPUTS ---- */
-        .field-group { margin-bottom: 16px; }
-        .field-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block; }
-        input, select {
-            width: 100%; padding: 13px 14px; border-radius: 12px;
-            background: rgba(255,255,255,0.06); color: #fff;
-            border: 1px solid var(--glass-border); outline: none;
-            box-sizing: border-box; font-family: inherit; font-size: 0.95rem;
-            transition: border-color 0.2s;
-        }
-        input:focus { border-color: rgba(0,122,255,0.5); }
-
-        /* ---- ADMIN BUTTONS ---- */
+        /* BUTTONS */
         .btn {
+            display: flex; align-items: center; justify-content: center; gap: 7px;
             width: 100%; padding: 14px; border-radius: 14px; margin-bottom: 10px;
             color: #fff; font-weight: 700; border: none; cursor: pointer;
-            box-sizing: border-box; font-size: 0.95rem; font-family: inherit;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: transform 0.12s, opacity 0.15s;
+            font-size: 0.93rem; font-family: inherit;
+            transition: transform 0.1s, opacity 0.15s;
             -webkit-touch-callout: none; user-select: none;
         }
-        .btn:active { transform: scale(0.96); opacity: 0.85; }
-        .btn-primary { background: linear-gradient(135deg, #007aff, #0055cc); box-shadow: 0 4px 15px rgba(0,122,255,0.25); }
-        .btn-success { background: linear-gradient(135deg, #34c759, #249c43); box-shadow: 0 4px 15px rgba(52,199,89,0.2); }
-        .btn-warning { background: linear-gradient(135deg, #ff9f0a, #cc7a00); box-shadow: 0 4px 15px rgba(255,159,10,0.2); }
-        .btn-danger  { background: linear-gradient(135deg, #ff453a, #c0392b); box-shadow: 0 4px 15px rgba(255,69,58,0.25); border: 1px solid rgba(255,69,58,0.3); }
-        .btn-muted   { background: #1c1c1e; border: 1px solid rgba(255,255,255,0.08); }
+        .btn:last-child { margin-bottom: 0; }
+        .btn:active { transform: scale(0.96); opacity: 0.82; }
+        .btn-blue    { background: linear-gradient(135deg,#007aff,#0055cc); box-shadow: 0 4px 14px rgba(0,122,255,0.25); }
+        .btn-green   { background: linear-gradient(135deg,#34c759,#249c43); box-shadow: 0 4px 14px rgba(52,199,89,0.2); }
+        .btn-orange  { background: linear-gradient(135deg,#ff9f0a,#cc7a00); box-shadow: 0 4px 14px rgba(255,159,10,0.2); }
+        .btn-red     { background: linear-gradient(135deg,#ff453a,#c0392b); box-shadow: 0 4px 14px rgba(255,69,58,0.25); }
+        .btn-muted   { background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border); }
+        .btn-claim   { background: linear-gradient(135deg,#34c759,#249c43); animation: pulse 1.8s infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.03);} }
+        .btn-claim:active { transform: scale(0.95)!important; animation: none; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-2 .btn { margin-bottom: 0; }
 
-        /* ---- ADMIN SECTION ---- */
-        .admin-section { width: 100%; max-width: 500px; margin-bottom: 12px; }
-        .section-header {
+        /* SECTION HEADER */
+        .sec-head {
             display: flex; align-items: center; gap: 8px;
-            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
-            color: var(--text-muted); margin-bottom: 12px;
+            font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--text-muted); margin-bottom: 10px;
         }
-        .section-header::after { content: ''; flex: 1; height: 1px; background: var(--glass-border); }
+        .sec-head::after { content:''; flex:1; height:1px; background: var(--glass-border); }
 
-        /* ---- STATUS PILL ---- */
+        /* STATUS PILL */
         .status-pill {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 10px 16px; border-radius: 14px;
-            font-size: 0.9rem; font-weight: 700;
-            width: 100%; box-sizing: border-box; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 15px; border-radius: 14px;
+            font-size: 0.88rem; font-weight: 700;
+            width: 100%; max-width: 500px; margin-bottom: 12px;
         }
-        .status-pill.active { background: rgba(52,199,89,0.12); border: 1px solid rgba(52,199,89,0.25); color: #34c759; }
-        .status-pill.inactive { background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.2); color: #ff453a; }
-        .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-        .status-dot.active { background: #34c759; box-shadow: 0 0 7px #34c759; animation: blink 1.5s infinite; }
-        .status-dot.inactive { background: #ff453a; }
-        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+        .status-pill.active   { background: rgba(52,199,89,0.1);  border: 1px solid rgba(52,199,89,0.25);  color: #34c759; }
+        .status-pill.inactive { background: rgba(255,69,58,0.08); border: 1px solid rgba(255,69,58,0.2);  color: #ff453a; }
+        .status-pill.pending  { background: rgba(255,159,10,0.08);border: 1px solid rgba(255,159,10,0.2); color: #ff9f0a; }
+        .sdot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+        .sdot.active { background:#34c759; box-shadow:0 0 7px #34c759; animation:blink 1.5s infinite; }
+        .sdot.inactive { background:#ff453a; }
+        .sdot.pending  { background:#ff9f0a; }
+        @keyframes blink { 0%,100%{opacity:1;}50%{opacity:0.35;} }
 
-        /* ---- DANGER ZONE BOX ---- */
+        /* DANGER BOX */
         .danger-box {
-            background: rgba(255,69,58,0.04); border: 1px solid rgba(255,69,58,0.2);
-            border-radius: 18px; padding: 18px 16px; width: 100%; max-width: 500px;
-            box-sizing: border-box; margin-bottom: 12px;
+            background: rgba(255,69,58,0.04); border: 1px solid rgba(255,69,58,0.18);
+            border-radius: var(--radius); padding: 16px;
+            width: 100%; max-width: 500px; margin-bottom: 12px;
         }
-        .danger-box .section-header { color: #ff6b60; }
-        .danger-box .section-header::after { background: rgba(255,69,58,0.2); }
+        .danger-box .sec-head { color: #ff6b60; }
+        .danger-box .sec-head::after { background: rgba(255,69,58,0.2); }
+
+        /* INPUTS */
+        .field { margin-bottom: 14px; }
+        .field:last-child { margin-bottom: 0; }
+        .field label { display:block; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted); margin-bottom:7px; }
+        .field input {
+            display: block; width: 100%; padding: 12px 14px;
+            border-radius: 12px; border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.05); color:#fff;
+            outline: none; font-size:0.93rem; font-family:inherit;
+            transition: border-color 0.2s;
+            /* Fix: no overflow outside card */
+            appearance: none; -webkit-appearance: none;
+        }
+        .field input:focus { border-color: rgba(0,122,255,0.55); }
+        .field input[type="datetime-local"] { color-scheme: dark; }
+
+        /* NAV */
+        .nav-bar {
+            display: flex; background: rgba(9,9,11,0.97); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            padding: 8px 0 env(safe-area-inset-bottom, 14px);
+            position: fixed; bottom:0; left:0; width:100vw;
+            justify-content: space-around; z-index:100;
+        }
+        .nav-item {
+            color: var(--text-muted); font-size:0.72rem; font-weight:600;
+            text-align:center; cursor:pointer; transition:0.25s;
+            display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px 14px;
+        }
+        .nav-icon { font-size:1.3rem; }
+        .nav-item.active { color:var(--primary); }
+
+        /* MODAL */
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.82); z-index:1000; display:none; justify-content:center; align-items:center; backdrop-filter:blur(10px); }
+        .modal-overlay.show { display:flex; }
+
+        /* SCORE CARD */
+        .score-card {
+            background: linear-gradient(160deg,#0e0e14,#1a1822);
+            border: 1px solid rgba(255,159,10,0.18);
+            border-radius: 26px; padding: 26px 20px;
+            text-align:center; width:100%; max-width:500px; margin-bottom:12px;
+            box-shadow: 0 0 50px rgba(255,100,50,0.07), 0 8px 28px rgba(0,0,0,0.5);
+            position:relative; overflow:hidden;
+        }
+        .score-card::before {
+            content:''; position:absolute; top:-50px; left:50%; transform:translateX(-50%);
+            width:220px; height:220px; border-radius:50%;
+            background:radial-gradient(circle,rgba(255,69,58,0.1) 0%,transparent 68%);
+            pointer-events:none;
+        }
+        .score-label { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; color:var(--text-muted); margin-bottom:2px; }
+        .score-val {
+            font-size: clamp(3rem,11vw,4.8rem); font-weight:900; line-height:1;
+            background: linear-gradient(150deg,#fff 0%,#ffcc70 50%,#ff453a 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            margin-bottom:14px; letter-spacing:-2px;
+        }
+        .rank-pill {
+            display:inline-flex; align-items:center; gap:6px;
+            background:rgba(0,122,255,0.1); border:1px solid rgba(0,122,255,0.22);
+            color:#5ac8fa; padding:6px 16px; border-radius:30px;
+            font-size:0.82rem; font-weight:700; margin-bottom:12px;
+        }
+        .timer-pill {
+            display:inline-block; font-size:0.83rem; font-weight:700;
+            color:#ff9f0a; background:rgba(255,159,10,0.09);
+            border:1px solid rgba(255,159,10,0.2); padding:6px 16px; border-radius:30px;
+        }
+        .timer-pill.ended { color:#ff453a; background:rgba(255,69,58,0.09); border-color:rgba(255,69,58,0.2); }
+        .timer-pill.idle   { color:#8e8e93; background:rgba(142,142,147,0.08); border-color:rgba(142,142,147,0.15); }
+
+        /* BANNERS */
+        .banner { border-radius:var(--radius); padding:18px; text-align:center; width:100%; max-width:500px; margin-bottom:12px; }
+        .banner h3 { margin:6px 0 6px; font-size:1.05rem; }
+        .banner p  { margin:0; font-size:0.83rem; color:var(--text-muted); }
+        .banner.winner { background:rgba(52,199,89,0.08); border:1px solid rgba(52,199,89,0.35); }
+        .banner.loser  { background:rgba(255,159,10,0.06); border:1px solid rgba(255,159,10,0.2); }
+        .banner.idle   { background:rgba(142,142,147,0.06); border:1px solid rgba(142,142,147,0.18); }
+
+        /* PREV WINNER CARD */
+        .prev-winner-strip {
+            display:flex; align-items:center; gap:12px;
+            background:linear-gradient(135deg,rgba(255,215,0,0.07),rgba(255,120,0,0.04));
+            border:1px solid rgba(255,200,0,0.18); border-radius:16px;
+            padding:12px 16px; width:100%; max-width:500px; margin-bottom:12px;
+        }
+        .crown-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#ff9f0a,#ff453a); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+
+        /* WIN HISTORY LIST */
+        .win-item {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:11px 0; border-bottom:1px solid rgba(255,255,255,0.06);
+        }
+        .win-item:last-child { border-bottom:none; }
+
+        /* TAP BTN */
+        .tap-btn {
+            width:50vw; height:50vw; max-width:230px; max-height:230px; min-width:160px; min-height:160px;
+            background:linear-gradient(145deg,#151518,#222228); border-radius:50%;
+            display:flex; justify-content:center; align-items:center;
+            box-shadow:13px 13px 35px #040405,-13px -13px 35px #14141b,inset 0 0 16px rgba(255,69,58,0.15);
+            margin:auto; user-select:none; touch-action:none;
+            transition:transform 0.1s cubic-bezier(0.175,0.885,0.32,1.275),box-shadow 0.12s ease;
+            -webkit-touch-callout:none;
+        }
+        .tap-btn.bouncing { transform:scale(0.83); box-shadow:4px 4px 10px #040405,-4px -4px 10px #14141b,inset 0 0 34px rgba(255,69,58,0.55); }
+        .tap-btn.disabled-tap { opacity:0.32; cursor:not-allowed; }
+        .float-txt { position:absolute; font-size:1.7rem; font-weight:900; color:#ff9f0a; text-shadow:0 0 16px #ff453a; pointer-events:none; animation:floatUp 0.6s ease forwards; }
+        @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(0.8);}60%{transform:translateY(-52px) scale(1.1);}100%{opacity:0;transform:translateY(-90px) scale(1);} }
+
+        /* LEADERBOARD */
+        .lb-table { width:100%; border-collapse:collapse; }
+        .lb-table thead th {
+            font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:1px;
+            color:var(--text-muted); padding:0 8px 10px; text-align:left;
+        }
+        .lb-table thead th:last-child { text-align:right; }
+        .lb-table tbody tr { transition:background 0.15s; }
+        .lb-table tbody tr.me { background:rgba(0,122,255,0.1); border-radius:10px; }
+        .lb-table tbody td { padding:11px 8px; border-bottom:1px solid rgba(255,255,255,0.05); vertical-align:middle; }
+        .lb-table tbody tr:last-child td { border-bottom:none; }
+        .lb-rank { font-size:1.2rem; width:36px; }
+        .lb-name { font-weight:700; font-size:0.9rem; }
+        .lb-user { font-size:0.72rem; color:var(--text-muted); }
+        .lb-score { font-weight:800; font-size:0.92rem; color:#ff9f0a; text-align:right; white-space:nowrap; }
+        .lb-me-tag { font-size:0.65rem; color:#5ac8fa; font-weight:700; margin-left:5px; }
     </style>
 </head>
 <body>
 
-<!-- SCREEN 1: SPLASH -->
+<!-- LOGIN -->
 <div id="screen-login" class="screen active" style="justify-content:center;">
-    <svg width="90" height="90" viewBox="0 0 24 24" fill="none" style="margin-bottom:14px; filter:drop-shadow(0 0 22px rgba(255,69,58,0.65));">
+    <svg width="88" height="88" viewBox="0 0 24 24" fill="none" style="margin-bottom:14px;filter:drop-shadow(0 0 22px rgba(255,69,58,0.6));">
         <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
         <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
     </svg>
-    <h1 style="margin:0; font-size:2rem; background:linear-gradient(135deg,#fff,#ff9f0a); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">RamsGiveaway</h1>
-    <div class="glass" style="margin-top:22px; text-align:left; line-height:1.6; font-size:0.93rem;">
-        <ul style="padding-left:18px; color:var(--text-muted); margin:0;">
-            <li style="margin-bottom:9px;"><b style="color:#fff;">Tap Cepat:</b> Sentuh api berkali-kali untuk poin.</li>
-            <li><b style="color:#fff;">Peringkat 1:</b> Hanya juara 1 yang mendapat tombol klaim hadiah di akhir sesi!</li>
+    <h1 style="margin:0;font-size:2rem;background:linear-gradient(135deg,#fff,#ff9f0a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">RamsGiveaway</h1>
+    <div class="card" style="margin-top:20px;line-height:1.65;font-size:0.92rem;">
+        <ul style="padding-left:18px;color:var(--text-muted);margin:0;">
+            <li style="margin-bottom:8px;"><b style="color:#fff;">Tap Cepat:</b> Sentuh api berkali-kali untuk poin.</li>
+            <li><b style="color:#fff;">Peringkat 1:</b> Hanya juara 1 yang mendapat tombol klaim hadiah!</li>
         </ul>
     </div>
-    <button class="login-btn" onclick="performLogin()">🔥 Mulai Bermain</button>
+    <button class="btn btn-blue" style="max-width:300px;margin-top:8px;" onclick="performLogin()">🔥 Mulai Bermain</button>
 </div>
 
-<!-- SCREEN 2: GAMEPLAY -->
+<!-- GAME -->
 <div id="screen-game" class="screen">
-
-    <!-- Score Card -->
     <div class="score-card">
         <div class="score-label">Total Tap Kamu</div>
         <div class="score-val" id="score-display">0</div>
-        <div id="my-rank-info" class="rank-badge">📊 Posisi: Memuat...</div>
+        <div id="my-rank-info" class="rank-pill">📊 Posisi: Memuat...</div>
         <br>
-        <div id="session-timer" class="session-timer-pill">⏳ Menghitung sesi...</div>
+        <div id="session-timer" class="timer-pill idle">⏳ Menghitung sesi...</div>
     </div>
 
-    <!-- Banner: Sesi Belum Dimulai -->
-    <div id="banner-not-started" class="glass" style="display:none; text-align:center; border-color:rgba(142,142,147,0.3); background:rgba(142,142,147,0.06);">
-        <div style="font-size:2rem; margin-bottom:8px;">⏸️</div>
-        <h3 style="margin:0 0 6px; color:#aeaeb2;">Sesi Belum Dimulai</h3>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Tunggu admin memulai sesi. Kamu belum bisa tap sekarang.</p>
+    <!-- Banners -->
+    <div id="banner-idle" class="banner idle" style="display:none;">
+        <div style="font-size:2rem;">⏸️</div>
+        <h3 style="color:#aeaeb2;">Sesi Belum Dimulai</h3>
+        <p>Tunggu admin memulai sesi.</p>
+    </div>
+    <div id="banner-ended" class="banner idle" style="display:none;">
+        <div style="font-size:2rem;">🔴</div>
+        <h3 style="color:#aeaeb2;">Sesi Telah Berakhir</h3>
+        <p>Sesi telah selesai. Pantau info sesi berikutnya.</p>
+    </div>
+    <div id="banner-loser" class="banner loser" style="display:none;">
+        <div style="font-size:2rem;">😔</div>
+        <h3 style="color:#ff9f0a;">Belum Beruntung</h3>
+        <p>Kamu tidak meraih posisi 1. Semangat di sesi berikutnya! 💪</p>
+    </div>
+    <div id="banner-winner" class="banner winner" style="display:none;">
+        <div style="font-size:2.2rem;">🏆</div>
+        <h3 style="color:#34c759;">SELAMAT! KAMU JUARA 1!</h3>
+        <p style="color:#86efac;">Kamu mempertahankan posisi puncak!</p>
+        <div id="win-claim-list" style="margin-top:12px;"></div>
     </div>
 
-    <!-- Banner: Sesi Berakhir (bukan juara 1) -->
-    <div id="banner-loser" class="glass" style="display:none; text-align:center; border-color:rgba(255,159,10,0.25); background:rgba(255,159,10,0.06);">
-        <div style="font-size:2.5rem; margin-bottom:6px;">😔</div>
-        <h3 style="margin:0 0 6px; color:#ff9f0a;">Sesi Telah Berakhir</h3>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Kamu tidak berhasil meraih posisi 1. Coba lagi di sesi berikutnya! 💪</p>
-    </div>
-
-    <!-- Banner: Juara 1 -->
-    <div id="winner-banner" class="glass" style="display:none; text-align:center; border-color:rgba(52,199,89,0.4); background:rgba(52,199,89,0.08);">
-        <div style="font-size:2.5rem; margin-bottom:6px;">🏆</div>
-        <h2 style="margin:0 0 6px; color:#34c759;">SELAMAT! KAMU JUARA 1!</h2>
-        <p style="font-size:0.85rem; color:#86efac; margin:0 0 4px;">Waktu telah habis dan kamu mempertahankan posisi puncak!</p>
-        <button class="claim-btn" id="claim-btn" onclick="claimReward()">🎁 KLAIM HADIAH SEKARANG</button>
-    </div>
-
-    <!-- Previous Winner Info -->
-    <div id="prev-winner-card" class="prev-winner-card" style="display:none;">
-        <div class="prev-winner-avatar">👑</div>
+    <!-- Previous Winner -->
+    <div id="prev-winner-card" class="prev-winner-strip" style="display:none;">
+        <div class="crown-avatar">👑</div>
         <div>
-            <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:1px;">Juara Sesi Sebelumnya</div>
-            <div id="prev-winner-name" style="font-weight:800; font-size:0.95rem;"></div>
-            <div id="prev-winner-score" style="font-size:0.8rem; color:#ff9f0a;"></div>
+            <div style="font-size:0.68rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Juara Sesi Sebelumnya</div>
+            <div id="prev-winner-name" style="font-weight:800;font-size:0.93rem;"></div>
+            <div id="prev-winner-score" style="font-size:0.78rem;color:#ff9f0a;"></div>
         </div>
     </div>
 
     <!-- Tap Button -->
     <div class="tap-btn disabled-tap" id="tap-btn">
-        <svg width="75" height="75" viewBox="0 0 24 24" fill="none" style="filter:drop-shadow(0 0 14px rgba(255,69,58,0.8)); pointer-events:none;">
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" style="filter:drop-shadow(0 0 13px rgba(255,69,58,0.8));pointer-events:none;">
             <path d="M12 2C12 2 8 6.5 8 10.5C8 12.5 9 13 9 13C7.5 11 7 9 7 9C5 11 4 13.5 4 16C4 20.4 7.6 24 12 24C16.4 24 20 20.4 20 16C20 12 17.5 9 17.5 9C17.5 9 18 11.5 16 13C16 13 17 9.5 14 5.5C12 2.5 12 2 12 2Z" fill="#ff453a"/>
             <path d="M12 11C12 11 10 13.5 10 15.5C10 17 11 18 12 18C13 18 14 17 14 15.5C14 13.5 12 11 12 11Z" fill="#ffd60a"/>
         </svg>
     </div>
 </div>
 
-<!-- SCREEN 3: LEADERBOARD -->
+<!-- LEADERBOARD -->
 <div id="screen-leaderboard" class="screen">
-    <div class="glass" style="max-width:600px;">
-        <h2 style="margin:0 0 16px; text-align:center; font-size:1.2rem;">🏆 Papan Peringkat <span id="lb-live-dot" style="display:none; font-size:0.6rem; vertical-align:middle; background:#34c759; border-radius:50%; width:8px; height:8px; display:inline-block; box-shadow:0 0 6px #34c759;"></span></h2>
-        <div id="lb-list" style="width:100%;">Loading...</div>
+    <div class="card" style="max-width:500px;padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <h2 style="margin:0;font-size:1.1rem;">🏆 Papan Peringkat</h2>
+            <span id="lb-live-badge" style="font-size:0.68rem;font-weight:700;color:#34c759;background:rgba(52,199,89,0.12);border:1px solid rgba(52,199,89,0.25);padding:3px 10px;border-radius:20px;display:none;">● LIVE</span>
+        </div>
+        <table class="lb-table">
+            <thead>
+                <tr>
+                    <th style="width:36px;">#</th>
+                    <th>Pemain</th>
+                    <th>Skor</th>
+                </tr>
+            </thead>
+            <tbody id="lb-list"><tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-muted);">Memuat...</td></tr></tbody>
+        </table>
     </div>
 </div>
 
-<!-- SCREEN 4: ADMIN -->
+<!-- ADMIN -->
 <div id="screen-admin" class="screen">
 
-    <!-- Status Pill -->
-    <div id="admin-status-pill" class="status-pill inactive" style="max-width:500px;">
-        <span class="status-dot inactive" id="admin-dot"></span>
-        <span id="admin-status-text">Memuat status...</span>
-        <span id="admin-status-endtime" style="margin-left:auto; font-size:0.72rem; font-weight:500; color:var(--text-muted);"></span>
+    <div id="admin-status-pill" class="status-pill inactive">
+        <span class="sdot inactive" id="admin-dot"></span>
+        <span id="admin-status-text">Memuat...</span>
+        <span id="admin-end-info" style="margin-left:auto;font-size:0.7rem;font-weight:500;color:var(--text-muted);"></span>
     </div>
 
-    <!-- Konfigurasi -->
-    <div class="admin-section">
-        <div class="section-header">⚙️ Konfigurasi Sesi</div>
-        <div class="glass" style="padding:18px;">
-            <div class="field-group">
-                <label class="field-label">Link Hadiah Juara 1</label>
+    <div style="width:100%;max-width:500px;">
+        <div class="sec-head">⚙️ Konfigurasi</div>
+        <div class="card" style="padding:16px;">
+            <div class="field">
+                <label>Link Hadiah Juara 1</label>
                 <input type="url" id="admin-link" placeholder="https://t.me/GrupVIP..." autocomplete="off">
             </div>
-            <div class="field-group" style="margin-bottom:0;">
-                <label class="field-label">Waktu Berakhir Sesi</label>
+            <div class="field">
+                <label>Waktu Berakhir Sesi</label>
                 <input type="datetime-local" id="admin-end-time">
             </div>
         </div>
-        <button class="btn btn-primary" onclick="adminAction('update_config')">💾 Simpan Konfigurasi</button>
+        <button class="btn btn-blue" onclick="adminAction('update_config')">💾 Simpan Konfigurasi</button>
     </div>
 
-    <!-- Kontrol Sesi -->
-    <div class="admin-section">
-        <div class="section-header">🕹️ Kontrol Sesi</div>
+    <div style="width:100%;max-width:500px;">
+        <div class="sec-head">🕹️ Kontrol Sesi</div>
         <div class="grid-2">
-            <button class="btn btn-success" onclick="adminAction('start')">▶️ Mulai Sesi</button>
-            <button class="btn btn-warning" onclick="adminAction('end')">⏹️ Akhiri Sesi</button>
+            <button class="btn btn-green" onclick="adminAction('start')">▶️ Mulai Sesi Baru</button>
+            <button class="btn btn-orange" onclick="adminAction('end')">⏹️ Akhiri Sesi</button>
         </div>
     </div>
 
-    <!-- Danger Zone -->
     <div class="danger-box">
-        <div class="section-header">⚠️ Danger Zone</div>
-        <button class="btn btn-danger" onclick="adminAction('reset')">🔄 Reset Skor (Simpan Juara)</button>
-        <button class="btn btn-muted" onclick="adminAction('delete')">🗑️ Hapus Total Database</button>
+        <div class="sec-head">⚠️ Danger Zone</div>
+        <button class="btn btn-red" onclick="adminAction('reset')">🔄 Reset Skor Manual</button>
+        <button class="btn btn-muted" onclick="adminAction('delete')">🗑️ Hapus Total Database + Riwayat</button>
     </div>
 
-    <!-- Juara Sebelumnya (di admin juga) -->
-    <div id="admin-prev-winner" class="admin-section" style="display:none;">
-        <div class="section-header">👑 Juara Sesi Sebelumnya</div>
-        <div class="glass" style="padding:14px 16px;">
-            <div id="admin-prev-winner-text" style="font-size:0.9rem;"></div>
+    <div id="admin-prev-winner" style="display:none;width:100%;max-width:500px;">
+        <div class="sec-head">👑 Juara Sesi Terakhir</div>
+        <div class="card" style="padding:14px;">
+            <div id="admin-prev-winner-text" style="font-size:0.88rem;"></div>
+        </div>
+    </div>
+
+    <div style="width:100%;max-width:500px;margin-top:4px;">
+        <div class="sec-head">📜 Riwayat Kemenangan Terdaftar</div>
+        <div class="card" style="padding:14px;">
+            <div id="admin-win-history"><span style="color:var(--text-muted);font-size:0.85rem;">Belum ada riwayat.</span></div>
         </div>
     </div>
 
@@ -347,365 +365,339 @@
 
 <!-- MODAL PASSWORD -->
 <div id="pwd-modal" class="modal-overlay">
-    <div class="glass" style="width:88%; max-width:320px; text-align:center;">
+    <div class="card" style="width:88%;max-width:320px;text-align:center;padding:22px;">
         <h3 style="margin:0 0 16px;">🔒 Akses Admin</h3>
-        <input type="password" id="admin-pwd-input" placeholder="Masukkan password..." autocomplete="current-password">
-        <div class="grid-2" style="margin-top:4px;">
+        <div class="field"><input type="password" id="admin-pwd-input" placeholder="Password..."></div>
+        <div class="grid-2">
             <button class="btn btn-muted" onclick="document.getElementById('pwd-modal').classList.remove('show')">Batal</button>
-            <button class="btn btn-primary" onclick="verifyAdmin()">Masuk</button>
+            <button class="btn btn-blue" onclick="verifyAdmin()">Masuk</button>
         </div>
     </div>
 </div>
 
-<!-- BOTTOM NAV -->
+<!-- NAV -->
 <div class="nav-bar" id="navbar" style="display:none;">
-    <div class="nav-item active" onclick="switchTab('game', this)">
-        <span class="nav-icon">🎮</span><span>Game</span>
-    </div>
-    <div class="nav-item" onclick="switchTab('leaderboard', this)">
-        <span class="nav-icon">🏆</span><span>Rank</span>
-    </div>
-    <div class="nav-item" onclick="promptAdminModal(this)">
-        <span class="nav-icon">⚙️</span><span>Admin</span>
-    </div>
+    <div class="nav-item active" onclick="switchTab('game',this)"><span class="nav-icon">🎮</span><span>Game</span></div>
+    <div class="nav-item" onclick="switchTab('leaderboard',this)"><span class="nav-icon">🏆</span><span>Rank</span></div>
+    <div class="nav-item" onclick="promptAdminModal(this)"><span class="nav-icon">⚙️</span><span>Admin</span></div>
 </div>
 
 <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    tg.setHeaderColor('#09090b');
+const tg = window.Telegram.WebApp;
+tg.expand(); tg.setHeaderColor('#09090b');
 
-    let score = 0, pendingTaps = 0, lastTapTime = 0;
-    let isActiveSession = false;
-    let sessionLoaded = false;
-    let hasEndTime = false;
-    let myRank = '-';
-    // winnerToken: token unik yang di-generate server saat sesi berakhir, digunakan untuk klaim
-    // Link asli TIDAK disimpan di client sama sekali
-    let claimToken = null;
-    let storedAdminPassword = '', tempNavElement = null;
-    let liveInterval = null;
+let score = 0, pendingTaps = 0, lastTapTime = 0;
+let isActiveSession = false, sessionLoaded = false, hasEndTime = false;
+let myRank = '-';
+let storedAdminPassword = '', tempNavElement = null;
+let liveInterval = null;
 
-    const realUser = tg.initDataUnsafe?.user;
-    if (!realUser || !realUser.id) {
-        document.querySelector('.login-btn').onclick = () => {
-            tg.showAlert('⚠️ Buka game ini melalui Telegram Mini App. Tidak bisa dari browser biasa.');
-        };
+const realUser = tg.initDataUnsafe?.user;
+if (!realUser?.id) {
+    document.querySelector('.btn-blue').onclick = () => tg.showAlert('⚠️ Buka melalui Telegram Mini App.');
+}
+const user = realUser || { id:'guest_'+Math.random().toString(36).slice(2), first_name:'Tamu', username:'guest' };
+
+function performLogin() {
+    if (!tg.initDataUnsafe?.user) { tg.showAlert('⚠️ Harus dibuka via Telegram!'); return; }
+    document.getElementById('screen-login').classList.remove('active');
+    document.getElementById('screen-game').classList.add('active');
+    document.getElementById('navbar').style.display = 'flex';
+    fetchState();
+}
+
+function switchTab(tab, el) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('screen-'+tab).classList.add('active');
+    el.classList.add('active');
+    if (tab === 'leaderboard') fetchLeaderboard();
+    if (tab === 'admin') refreshAdminPanel();
+}
+
+function promptAdminModal(el) {
+    if (storedAdminPassword) switchTab('admin', el);
+    else { tempNavElement = el; document.getElementById('pwd-modal').classList.add('show'); document.getElementById('admin-pwd-input').value=''; }
+}
+
+function verifyAdmin() {
+    const pwd = document.getElementById('admin-pwd-input').value;
+    fetch('/api/admin/action',{ method:'POST', headers:{'Content-Type':'application/json','x-admin-password':pwd}, body:JSON.stringify({action:'update_config'}) })
+        .then(r => { if(r.ok){ storedAdminPassword=pwd; document.getElementById('pwd-modal').classList.remove('show'); switchTab('admin',tempNavElement); } else tg.showAlert('❌ Sandi Salah!'); });
+}
+
+// ---- ADMIN PANEL ----
+function refreshAdminPanel() {
+    const pill = document.getElementById('admin-status-pill');
+    const dot  = document.getElementById('admin-dot');
+    const txt  = document.getElementById('admin-status-text');
+    const endInfo = document.getElementById('admin-end-info');
+
+    if (isActiveSession) {
+        pill.className='status-pill active'; dot.className='sdot active'; txt.innerText='Sesi Sedang Berjalan';
+    } else if (hasEndTime) {
+        pill.className='status-pill inactive'; dot.className='sdot inactive'; txt.innerText='Sesi Telah Berakhir';
+    } else {
+        pill.className='status-pill pending'; dot.className='sdot pending'; txt.innerText='Sesi Belum Dimulai';
     }
-    const user = realUser || { id: 'guest_' + Math.random().toString(36).slice(2), first_name: 'Tamu', username: 'guest' };
 
-    function performLogin() {
-        if (!tg.initDataUnsafe?.user) {
-            tg.showAlert('⚠️ Harus dibuka melalui Telegram untuk bisa bermain dan masuk leaderboard!');
-            return;
+    fetch('/api/state').then(r=>r.json()).then(data => {
+        if (data.endTime) endInfo.innerText='Berakhir: '+new Date(data.endTime).toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short'});
+        if (!document.getElementById('admin-link').value) document.getElementById('admin-link').value = '';
+        if (data.previousWinner) {
+            document.getElementById('admin-prev-winner').style.display='block';
+            document.getElementById('admin-prev-winner-text').innerHTML=
+                '<b>'+data.previousWinner.first_name+'</b> — '+
+                parseInt(data.previousWinner.total_score).toLocaleString('id-ID')+' poin';
         }
-        document.getElementById('screen-login').classList.remove('active');
-        document.getElementById('screen-game').classList.add('active');
-        document.getElementById('navbar').style.display = 'flex';
-        fetchState();
-        startLiveLeaderboard();
+    });
+
+    const dt = document.getElementById('admin-end-time');
+    if (!dt.value) {
+        const d=new Date(Date.now()+3600000), pad=n=>String(n).padStart(2,'0');
+        dt.value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
     }
 
-    function switchTab(tab, el) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('screen-' + tab).classList.add('active');
-        el.classList.add('active');
-        if (tab === 'leaderboard') fetchLeaderboard();
-        if (tab === 'admin') refreshAdminPanel();
+    // Riwayat kemenangan global (admin lihat semua)
+    fetch('/api/leaderboard').then(()=>{}); // dummy keep-alive
+    // Note: win history tidak diekspos via public API, hanya per-user via /api/my-wins
+    document.getElementById('admin-win-history').innerHTML = '<span style="color:var(--text-muted);font-size:0.82rem;">Riwayat tersimpan di server (server-side only).</span>';
+}
+
+// ---- TAP ----
+let tapRateCount = 0;
+setInterval(() => { tapRateCount = 0; }, 1000);
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+const tapBtn = document.getElementById('tap-btn');
+tapBtn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (!sessionLoaded || !isActiveSession) { if(sessionLoaded) tg.showAlert('🔴 Sesi tidak aktif!'); return; }
+    if (tapRateCount >= 10) return;
+    const now = Date.now();
+    if (now - lastTapTime < 40) return;
+    lastTapTime = now;
+    tapBtn.classList.add('bouncing');
+    setTimeout(() => tapBtn.classList.remove('bouncing'), 100);
+    for (let i=0; i<e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        tapRateCount++; score++; pendingTaps++;
+        document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
+        tg.HapticFeedback.impactOccurred('rigid');
+        spawnFloat(t.clientX+(Math.random()-.5)*40, t.clientY-20);
     }
+}, { passive: false });
 
-    function promptAdminModal(el) {
-        if (storedAdminPassword) switchTab('admin', el);
-        else { tempNavElement = el; document.getElementById('pwd-modal').classList.add('show'); document.getElementById('admin-pwd-input').value = ''; }
-    }
+function spawnFloat(x, y) {
+    const el=document.createElement('div'); el.className='float-txt'; el.innerText='+1';
+    el.style.left=(x-20)+'px'; el.style.top=(y-40)+'px';
+    document.body.appendChild(el); setTimeout(()=>el.remove(), 620);
+}
 
-    function verifyAdmin() {
-        const pwd = document.getElementById('admin-pwd-input').value;
-        fetch('/api/admin/action', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-password': pwd },
-            body: JSON.stringify({ action: 'update_config' })
-        }).then(res => {
-            if (res.ok) {
-                storedAdminPassword = pwd;
-                document.getElementById('pwd-modal').classList.remove('show');
-                switchTab('admin', tempNavElement);
-            } else tg.showAlert('❌ Sandi Salah!');
-        });
-    }
+// ---- SYNC ----
+setInterval(async () => {
+    if (pendingTaps <= 0) return;
+    const taps = Math.min(pendingTaps, 30); pendingTaps -= taps;
+    try {
+        const r = await fetch('/api/save-score', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tg_id:user.id.toString(),username:user.username||'',first_name:user.first_name,taps}) });
+        const d = await r.json();
+        if (r.status===429) { tg.showAlert('⚠️ Anti-Cheat aktif!'); pendingTaps=0; }
+        else if (d.success) { score=d.total_score+pendingTaps; document.getElementById('score-display').innerText=score.toLocaleString('id-ID'); }
+    } catch { pendingTaps += taps; }
+}, 3000);
 
-    // ---- ADMIN PANEL ----
-    function refreshAdminPanel() {
-        const pill = document.getElementById('admin-status-pill');
-        const dot = document.getElementById('admin-dot');
-        const txt = document.getElementById('admin-status-text');
-        const endTxt = document.getElementById('admin-status-endtime');
-
-        if (isActiveSession) {
-            pill.className = 'status-pill active'; dot.className = 'status-dot active';
-            txt.innerText = 'Sesi Sedang Berjalan';
-        } else {
-            pill.className = 'status-pill inactive'; dot.className = 'status-dot inactive';
-            txt.innerText = hasEndTime ? 'Sesi Telah Berakhir' : 'Sesi Belum Dimulai';
-        }
-
-        fetch('/api/state').then(r => r.json()).then(data => {
-            if (data.endTime) endTxt.innerText = 'Berakhir: ' + new Date(data.endTime).toLocaleString('id-ID', { dateStyle:'short', timeStyle:'short' });
-            if (!document.getElementById('admin-link').value) document.getElementById('admin-link').value = data.winnerLink || '';
-            if (data.previousWinner) {
-                document.getElementById('admin-prev-winner').style.display = 'block';
-                document.getElementById('admin-prev-winner-text').innerHTML =
-                    '<b>' + data.previousWinner.first_name + '</b> &mdash; ' +
-                    parseInt(data.previousWinner.total_score).toLocaleString('id-ID') + ' poin';
-            }
-        });
-
-        const dtInput = document.getElementById('admin-end-time');
-        if (!dtInput.value) {
-            const d = new Date(Date.now() + 3600000);
-            const pad = n => String(n).padStart(2, '0');
-            dtInput.value = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-        }
-    }
-
-    // ---- TAP LOGIC ----
-    let tapCountPerSecond = 0;
-    setInterval(() => { tapCountPerSecond = 0; }, 1000);
-
-    const tapBtn = document.getElementById('tap-btn');
-    tapBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (!sessionLoaded) return;
-        if (!isActiveSession) { tg.showAlert('🔴 Sesi belum dimulai atau sudah berakhir!'); return; }
-        if (tapCountPerSecond >= 10) return;
-
-        const now = Date.now();
-        if (now - lastTapTime < 40) return;
-        lastTapTime = now;
-
-        tapBtn.classList.add('bouncing');
-        setTimeout(() => tapBtn.classList.remove('bouncing'), 100);
-
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            const t = e.changedTouches[i];
-            tapCountPerSecond++; score++; pendingTaps++;
+// ---- FETCH ME ----
+async function fetchMe() {
+    try {
+        const r = await fetch('/api/me/'+user.id); const d=await r.json();
+        myRank = d.rank;
+        if (d.total_score !== undefined && score===0 && pendingTaps===0) {
+            score = parseInt(d.total_score)||0;
             document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
-            tg.HapticFeedback.impactOccurred('rigid');
-            createFloatingText(t.clientX + (Math.random() - 0.5) * 40, t.clientY - 20);
         }
-    }, { passive: false });
+        document.getElementById('my-rank-info').innerText = '📊 Posisi: #'+myRank;
+        updateBanners();
+    } catch {}
+}
 
-    // Blokir context menu (prevent link leak on long-press)
-    document.addEventListener('contextmenu', e => e.preventDefault());
+// ---- BANNERS ----
+function hideAllBanners() {
+    ['banner-idle','banner-ended','banner-loser','banner-winner'].forEach(id => document.getElementById(id).style.display='none');
+}
 
-    function createFloatingText(x, y) {
-        const el = document.createElement('div');
-        el.className = 'floating-text'; el.innerText = '+1';
-        el.style.left = (x - 20) + 'px'; el.style.top = (y - 40) + 'px';
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 650);
+async function updateBanners() {
+    const tapEl = document.getElementById('tap-btn');
+    hideAllBanners();
+    if (!sessionLoaded) return;
+
+    if (isActiveSession) {
+        tapEl.style.display='flex'; return;
+    }
+    tapEl.style.display='none';
+
+    if (!hasEndTime) {
+        document.getElementById('banner-idle').style.display='block'; return;
     }
 
-    // ---- BACKGROUND SYNC ----
-    setInterval(async () => {
-        if (pendingTaps > 0) {
-            const taps = Math.min(pendingTaps, 30); pendingTaps -= taps;
-            try {
-                const res = await fetch('/api/save-score', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tg_id: user.id.toString(), username: user.username || '', first_name: user.first_name, taps })
-                });
-                const data = await res.json();
-                if (res.status === 429) { tg.showAlert('⚠️ Anti-Cheat: Tap terlalu cepat!'); pendingTaps = 0; }
-                else if (data.success) { score = data.total_score + pendingTaps; document.getElementById('score-display').innerText = score.toLocaleString('id-ID'); fetchMe(); }
-            } catch (e) { pendingTaps += taps; }
-        }
-    }, 3000);
-
-    // ---- FETCH ME ----
-    async function fetchMe() {
+    // Sesi sudah berakhir: cek apakah menang
+    if (myRank == 1) {
+        document.getElementById('banner-winner').style.display='block';
+        // Load win history milik user untuk tampilkan tombol klaim
         try {
-            const res = await fetch('/api/me/' + user.id);
-            const data = await res.json();
-            myRank = data.rank;
-            if (data.total_score !== undefined && score === 0 && pendingTaps === 0) {
-                score = parseInt(data.total_score) || 0;
-                document.getElementById('score-display').innerText = score.toLocaleString('id-ID');
-            }
-            document.getElementById('my-rank-info').innerText = '📊 Posisi: #' + myRank;
-            checkEndBanners();
-        } catch(e) {}
-    }
-
-    // ---- BANNERS ----
-    function checkEndBanners() {
-        const winnerBanner   = document.getElementById('winner-banner');
-        const loserBanner    = document.getElementById('banner-loser');
-        const notStarted     = document.getElementById('banner-not-started');
-        const tapEl          = document.getElementById('tap-btn');
-
-        // Reset
-        winnerBanner.style.display = 'none';
-        loserBanner.style.display  = 'none';
-        notStarted.style.display   = 'none';
-
-        if (!sessionLoaded) return;
-
-        if (isActiveSession) {
-            // Sesi aktif: tampilkan tombol tap, sembunyikan semua banner
-            tapEl.style.display = 'flex';
-        } else {
-            // Sesi tidak aktif
-            tapEl.style.display = 'none';
-            if (!hasEndTime) {
-                // Belum pernah ada endTime → sesi memang belum dimulai
-                notStarted.style.display = 'block';
-            } else {
-                // Sesi sudah pernah jalan lalu berakhir
-                if (myRank == 1) {
-                    winnerBanner.style.display = 'block';
+            const r = await fetch('/api/my-wins/'+user.id);
+            const wins = await r.json();
+            const claimList = document.getElementById('win-claim-list');
+            claimList.innerHTML = '';
+            wins.forEach(w => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-claim';
+                btn.style.marginTop='8px';
+                if (w.tokenUsed) {
+                    btn.style.opacity='0.5'; btn.disabled=true;
+                    btn.innerText='✓ Sesi #'+w.sessionId+' sudah diklaim';
                 } else {
-                    loserBanner.style.display = 'block';
+                    btn.innerText='🎁 Klaim Hadiah Sesi #'+w.sessionId+' ('+parseInt(w.total_score).toLocaleString('id-ID')+' poin)';
+                    btn.onclick = () => claimWin(w.token, w.sessionId);
                 }
-            }
-        }
-    }
-
-    // ---- CLAIM (via token, link tidak pernah ke client) ----
-    function claimReward() {
-        if (!claimToken) {
-            tg.showAlert('Link hadiah belum tersedia atau sudah kedaluwarsa.');
-            return;
-        }
-        // Redirect via server-side; link asli tidak di-expose ke frontend
-        const claimUrl = '/api/claim/' + encodeURIComponent(claimToken) + '?tg_id=' + user.id;
-        tg.openLink(window.location.origin + claimUrl);
-    }
-
-    // ---- LEADERBOARD ----
-    async function fetchLeaderboard() {
-        const list = document.getElementById('lb-list');
-        try {
-            const res = await fetch('/api/leaderboard');
-            const data = await res.json();
-            list.innerHTML = '';
-            if (!data.length) { list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada pemain</div>'; return; }
-            data.forEach((p, i) => {
-                const badge = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--text-muted);font-weight:700;">#'+(i+1)+'</span>';
-                const isMe = p.tg_id === user.id.toString();
-                const row = document.createElement('div');
-                row.className = 'lb-row' + (isMe ? ' me' : '');
-                row.innerHTML =
-                    '<div style="display:flex;align-items:center;gap:10px;">'
-                    + '<span style="font-size:1.3rem;min-width:28px;text-align:center;">' + badge + '</span>'
-                    + '<div><div style="font-weight:700;font-size:0.92rem;">' + p.first_name + (isMe ? ' <span style="font-size:0.72rem;color:#5ac8fa;">(Anda)</span>' : '') + '</div>'
-                    + '<div style="font-size:0.75rem;color:var(--text-muted);">@' + (p.username||'-') + '</div></div></div>'
-                    + '<div style="font-weight:800;color:#ff9f0a;font-size:0.95rem;">' + parseInt(p.total_score).toLocaleString('id-ID') + '</div>';
-                list.appendChild(row);
+                claimList.appendChild(btn);
             });
-        } catch(e) { list.innerHTML = '<div style="text-align:center;color:var(--text-muted);">Gagal memuat</div>'; }
-    }
-
-    // ---- LIVE LEADERBOARD (setiap 5 detik saat sesi aktif, tiap 10 detik jika tidak) ----
-    function startLiveLeaderboard() {
-        if (liveInterval) clearInterval(liveInterval);
-        liveInterval = setInterval(() => {
-            const lbScreen = document.getElementById('screen-leaderboard');
-            if (lbScreen.classList.contains('active')) fetchLeaderboard();
-            fetchMe();
-        }, isActiveSession ? 5000 : 10000);
-    }
-
-    // ---- FETCH STATE ----
-    async function fetchState() {
+        } catch {}
+    } else {
+        // Cek apakah user punya riwayat menang (sesi sebelumnya)
         try {
-            const res = await fetch('/api/state');
-            const data = await res.json();
-            isActiveSession = data.isActive;
-            hasEndTime = !!data.endTime;
-            sessionLoaded = true;
-            claimToken = data.claimToken || null;
-            setTapEnabled(isActiveSession);
-
-            // Previous winner
-            if (data.previousWinner) {
-                const card = document.getElementById('prev-winner-card');
-                card.style.display = 'flex';
-                document.getElementById('prev-winner-name').innerText = data.previousWinner.first_name;
-                document.getElementById('prev-winner-score').innerText = parseInt(data.previousWinner.total_score).toLocaleString('id-ID') + ' poin';
-            }
-
-            if (data.endTime) {
-                const end = new Date(data.endTime).getTime();
-                const timerInterval = setInterval(() => {
-                    const dist = end - Date.now();
-                    const timerEl = document.getElementById('session-timer');
-                    if (dist < 0 || !isActiveSession) {
-                        timerEl.className = 'session-timer-pill inactive';
-                        timerEl.innerText = '🔴 Sesi Berakhir';
-                        isActiveSession = false;
-                        setTapEnabled(false);
-                        checkEndBanners();
-                        clearInterval(timerInterval);
+            const r = await fetch('/api/my-wins/'+user.id);
+            const wins = await r.json();
+            const unclaimed = wins.filter(w => !w.tokenUsed && w.token);
+            if (unclaimed.length > 0) {
+                // Punya klaim yang belum digunakan dari sesi sebelumnya
+                document.getElementById('banner-winner').style.display='block';
+                const claimList = document.getElementById('win-claim-list');
+                claimList.innerHTML = '<p style="color:#86efac;font-size:0.8rem;margin-bottom:8px;">Kamu masih punya hadiah belum diklaim:</p>';
+                wins.forEach(w => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-claim';
+                    btn.style.marginTop='6px';
+                    if (w.tokenUsed || !w.token) {
+                        btn.style.opacity='0.45'; btn.disabled=true;
+                        btn.innerText='✓ Sesi #'+w.sessionId+' sudah diklaim';
                     } else {
-                        const h = Math.floor(dist / 3600000);
-                        const m = Math.floor((dist % 3600000) / 60000);
-                        const s = Math.floor((dist % 60000) / 1000);
-                        timerEl.className = 'session-timer-pill';
-                        timerEl.innerText = '⏳ Sisa: ' + h + 'j ' + m + 'm ' + s + 'd';
+                        btn.innerText='🎁 Klaim Hadiah Sesi #'+w.sessionId;
+                        btn.onclick = () => claimWin(w.token, w.sessionId);
                     }
-                }, 1000);
-            } else if (!isActiveSession) {
-                const timerEl = document.getElementById('session-timer');
-                timerEl.className = 'session-timer-pill inactive';
-                timerEl.innerText = '⏸️ Sesi Belum Dimulai';
+                    claimList.appendChild(btn);
+                });
             } else {
-                document.getElementById('session-timer').innerText = '🟢 Sesi Berjalan';
+                document.getElementById('banner-loser').style.display='block';
             }
-
-            checkEndBanners();
-            fetchMe();
-            startLiveLeaderboard();
-        } catch(e) {
-            sessionLoaded = true;
-            document.getElementById('session-timer').innerText = '⚠️ Gagal memuat';
+        } catch {
+            document.getElementById('banner-loser').style.display='block';
         }
     }
+}
 
-    function setTapEnabled(enabled) {
-        if (enabled) tapBtn.classList.remove('disabled-tap');
-        else tapBtn.classList.add('disabled-tap');
+function claimWin(token, sessionId) {
+    if (!token) { tg.showAlert('Token tidak tersedia.'); return; }
+    const url = window.location.origin + '/api/claim/' + encodeURIComponent(token) + '?tg_id=' + user.id;
+    tg.openLink(url);
+}
+
+// ---- LEADERBOARD ----
+async function fetchLeaderboard() {
+    const tbody = document.getElementById('lb-list');
+    const liveBadge = document.getElementById('lb-live-badge');
+    if (isActiveSession) liveBadge.style.display='inline'; else liveBadge.style.display='none';
+    try {
+        const r = await fetch('/api/leaderboard'); const data = await r.json();
+        tbody.innerHTML='';
+        if (!data.length) { tbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-muted);">Belum ada pemain</td></tr>'; return; }
+        data.forEach((p,i) => {
+            const badge = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--text-muted);font-weight:700;font-size:0.85rem;">'+(i+1)+'</span>';
+            const isMe = p.tg_id===user.id.toString();
+            const tr=document.createElement('tr'); if(isMe) tr.className='me';
+            tr.innerHTML=
+                '<td class="lb-rank">'+badge+'</td>'+
+                '<td><div class="lb-name">'+p.first_name+(isMe?'<span class="lb-me-tag">YOU</span>':'')+'</div>'+
+                '<div class="lb-user">@'+(p.username||'-')+'</div></td>'+
+                '<td class="lb-score">'+parseInt(p.total_score).toLocaleString('id-ID')+'</td>';
+            tbody.appendChild(tr);
+        });
+    } catch { tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Gagal memuat</td></tr>'; }
+}
+
+// ---- LIVE REFRESH (3 detik) ----
+function startLive() {
+    if (liveInterval) clearInterval(liveInterval);
+    liveInterval = setInterval(() => {
+        fetchMe();
+        if (document.getElementById('screen-leaderboard').classList.contains('active')) fetchLeaderboard();
+    }, 3000);
+}
+
+// ---- FETCH STATE ----
+async function fetchState() {
+    try {
+        const r = await fetch('/api/state'); const data = await r.json();
+        isActiveSession = data.isActive;
+        hasEndTime = !!data.endTime;
+        sessionLoaded = true;
+        setTapEnabled(isActiveSession);
+
+        if (data.previousWinner) {
+            document.getElementById('prev-winner-card').style.display='flex';
+            document.getElementById('prev-winner-name').innerText=data.previousWinner.first_name;
+            document.getElementById('prev-winner-score').innerText=parseInt(data.previousWinner.total_score).toLocaleString('id-ID')+' poin';
+        }
+
+        const timerEl = document.getElementById('session-timer');
+        if (data.endTime) {
+            const end = new Date(data.endTime).getTime();
+            const tick = setInterval(() => {
+                const dist = end - Date.now();
+                if (dist < 0 || !isActiveSession) {
+                    timerEl.className='timer-pill ended'; timerEl.innerText='🔴 Sesi Berakhir';
+                    isActiveSession=false; setTapEnabled(false); updateBanners();
+                    clearInterval(tick);
+                } else {
+                    const h=Math.floor(dist/3600000), m=Math.floor(dist%3600000/60000), s=Math.floor(dist%60000/1000);
+                    timerEl.className='timer-pill'; timerEl.innerText='⏳ Sisa: '+h+'j '+m+'m '+s+'d';
+                }
+            }, 1000);
+        } else if (!isActiveSession) {
+            timerEl.className='timer-pill idle'; timerEl.innerText='⏸️ Sesi Belum Dimulai';
+        } else {
+            timerEl.className='timer-pill'; timerEl.innerText='🟢 Sesi Berjalan';
+        }
+
+        updateBanners(); fetchMe(); startLive();
+    } catch {
+        sessionLoaded=true;
+        document.getElementById('session-timer').className='timer-pill idle';
+        document.getElementById('session-timer').innerText='⚠️ Gagal memuat';
     }
+}
 
-    // ---- ADMIN ACTION ----
-    async function adminAction(actionType) {
-        let msg = 'Yakin ingin mengeksekusi perintah ini?';
-        if (actionType === 'reset') msg = 'Yakin RESET? Semua skor jadi 0, sejarah juara #1 disimpan.';
-        if (actionType === 'delete') msg = 'Yakin HAPUS TOTAL? Semua skor dan data juara dilenyapkan.';
+function setTapEnabled(on) {
+    if(on) tapBtn.classList.remove('disabled-tap'); else tapBtn.classList.add('disabled-tap');
+}
 
-        const doRequest = async () => {
-            const endVal = document.getElementById('admin-end-time').value;
-            const payload = {
-                action: actionType,
-                endTime: endVal ? new Date(endVal).toISOString() : undefined,
-                winnerLink: document.getElementById('admin-link').value || undefined
-            };
-            const res = await fetch('/api/admin/action', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-password': storedAdminPassword },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                tg.showAlert('✅ Aksi Berhasil!');
-                if (actionType !== 'update_config') window.location.reload();
-                else { fetchState(); refreshAdminPanel(); }
-            } else tg.showAlert('❌ Gagal / Akses ditolak.');
+// ---- ADMIN ACTION ----
+async function adminAction(type) {
+    const msgs = { reset:'Yakin RESET skor? Riwayat kemenangan tetap tersimpan.', delete:'Yakin HAPUS TOTAL? Skor + seluruh riwayat kemenangan hilang permanen.' };
+    const doReq = async () => {
+        const endVal = document.getElementById('admin-end-time').value;
+        const payload = {
+            action: type,
+            endTime: endVal ? new Date(endVal).toISOString() : undefined,
+            winnerLink: document.getElementById('admin-link').value || undefined
         };
-
-        if (['reset','delete','end'].includes(actionType)) tg.showConfirm(msg, ok => { if(ok) doRequest(); });
-        else doRequest();
-    }
+        const r = await fetch('/api/admin/action',{method:'POST',headers:{'Content-Type':'application/json','x-admin-password':storedAdminPassword},body:JSON.stringify(payload)});
+        if (r.ok) { tg.showAlert('✅ Aksi Berhasil!'); if(type!=='update_config') window.location.reload(); else { fetchState(); refreshAdminPanel(); } }
+        else tg.showAlert('❌ Gagal / Akses ditolak.');
+    };
+    if (['reset','delete','end'].includes(type)) tg.showConfirm(msgs[type]||'Yakin?', ok => { if(ok) doReq(); });
+    else doReq();
+}
 </script>
 </body>
 </html>

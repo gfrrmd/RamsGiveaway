@@ -13,29 +13,51 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- STATE ---
+/**
+ * winHistory: array of { tg_id, first_name, total_score, token, tokenUsed, link, sessionId, wonAt }
+ * Setiap sesi yang berakhir dengan pemenang ditambahkan ke sini.
+ * Pemenang lama TETAP bisa klaim link lamanya via token masing-masing.
+ */
+let winHistory = [];
+
 let gameState = {
     isActive: false,
     endTime: null,
-    winnerLink: '',          // Link asli, TIDAK dikirim ke client biasa
-    claimToken: null,        // Token one-time untuk klaim, dikirim hanya ke rank-1 setelah sesi berakhir
-    claimTokenUsed: false,
-    claimTokenTgId: null,    // Hanya pemilik token yang bisa klaim
-    previousWinner: null
+    winnerLink: '',
+    previousWinner: null,   // Info nama+skor juara terakhir (untuk ditampilkan)
+    sessionId: 0            // Incremental session counter
 };
 
 const userSyncData = {};
 
-// --- API STATE (link dihapus dari response publik) ---
+// Helper: cari win record by token
+function findWinByToken(token) {
+    return winHistory.find(w => w.token === token);
+}
+
+// --- API STATE ---
 app.get('/api/state', (req, res) => {
     res.json({
         isActive: gameState.isActive,
         endTime: gameState.endTime,
         previousWinner: gameState.previousWinner,
-        // claimToken hanya dikirim jika sesi tidak aktif dan ada token
-        claimToken: (!gameState.isActive && gameState.claimToken && !gameState.claimTokenUsed)
-            ? gameState.claimToken : null
+        sessionId: gameState.sessionId
+        // winnerLink & token TIDAK dikirim di sini
     });
+});
+
+// --- API MY WINS: daftar token klaim milik tg_id tertentu ---
+app.get('/api/my-wins/:tg_id', (req, res) => {
+    const wins = winHistory
+        .filter(w => w.tg_id === req.params.tg_id)
+        .map(w => ({
+            sessionId: w.sessionId,
+            wonAt: w.wonAt,
+            total_score: w.total_score,
+            token: w.tokenUsed ? null : w.token,   // token null jika sudah diklaim
+            tokenUsed: w.tokenUsed
+        }));
+    res.json(wins);
 });
 
 // --- API ME ---
@@ -85,27 +107,19 @@ app.get('/api/leaderboard', async (req, res) => {
     } catch { res.status(500).json({ error: 'Server Error' }); }
 });
 
-// --- API CLAIM (server-side redirect, link tidak bocor ke client) ---
-app.get('/api/claim/:token', async (req, res) => {
+// --- API CLAIM: server-side redirect, link tidak pernah ke client ---
+app.get('/api/claim/:token', (req, res) => {
     const { token } = req.params;
     const { tg_id } = req.query;
 
-    if (!gameState.claimToken || gameState.claimToken !== token) {
-        return res.status(403).send('<h2>Token tidak valid atau sudah kadaluwarsa.</h2>');
-    }
-    if (gameState.claimTokenTgId && gameState.claimTokenTgId !== tg_id) {
-        return res.status(403).send('<h2>Akses ditolak. Token ini bukan milikmu.</h2>');
-    }
-    if (gameState.claimTokenUsed) {
-        return res.status(410).send('<h2>Link klaim sudah digunakan.</h2>');
-    }
-    if (!gameState.winnerLink) {
-        return res.status(404).send('<h2>Link hadiah belum disiapkan admin.</h2>');
-    }
+    const win = findWinByToken(token);
+    if (!win) return res.status(403).send('<h2>Token tidak valid atau tidak ditemukan.</h2>');
+    if (win.tg_id !== tg_id) return res.status(403).send('<h2>Akses ditolak. Token ini bukan milikmu.</h2>');
+    if (win.tokenUsed) return res.status(410).send('<h2>Link klaim ini sudah pernah digunakan.</h2>');
+    if (!win.link) return res.status(404).send('<h2>Link hadiah belum disiapkan admin.</h2>');
 
-    // Tandai token sudah digunakan
-    gameState.claimTokenUsed = true;
-    res.redirect(gameState.winnerLink);
+    win.tokenUsed = true;
+    res.redirect(win.link);
 });
 
 // --- ADMIN MIDDLEWARE ---
@@ -123,34 +137,43 @@ app.post('/api/admin/action', isAdmin, async (req, res) => {
             if (winnerLink !== undefined) gameState.winnerLink = winnerLink;
         }
         else if (action === 'start') {
+            // Sesi baru: reset skor semua user di DB, tapi winHistory tetap
+            await db.query(`UPDATE users SET total_score = 0`);
             gameState.isActive = true;
-            gameState.claimToken = null;
-            gameState.claimTokenUsed = false;
-            gameState.claimTokenTgId = null;
+            gameState.sessionId += 1;
             if (endTime !== undefined) gameState.endTime = endTime;
+            if (winnerLink !== undefined) gameState.winnerLink = winnerLink;
         }
         else if (action === 'end') {
             gameState.isActive = false;
             gameState.endTime = new Date().toISOString();
-            // Generate claim token untuk rank-1
-            const top = await db.query(`SELECT tg_id FROM users ORDER BY total_score DESC LIMIT 1`);
-            if (top.rows.length > 0) {
-                gameState.claimToken = crypto.randomBytes(24).toString('hex');
-                gameState.claimTokenUsed = false;
-                gameState.claimTokenTgId = top.rows[0].tg_id;
+            // Cari rank-1, buat token klaim, simpan ke winHistory
+            const top = await db.query(`SELECT tg_id, first_name, total_score FROM users ORDER BY total_score DESC LIMIT 1`);
+            if (top.rows.length > 0 && parseInt(top.rows[0].total_score) > 0) {
+                const winner = top.rows[0];
+                const token = crypto.randomBytes(24).toString('hex');
+                winHistory.push({
+                    tg_id: winner.tg_id,
+                    first_name: winner.first_name,
+                    total_score: winner.total_score,
+                    token,
+                    tokenUsed: false,
+                    link: gameState.winnerLink,  // Link saat sesi berakhir disimpan permanen di sini
+                    sessionId: gameState.sessionId,
+                    wonAt: new Date().toISOString()
+                });
+                gameState.previousWinner = { tg_id: winner.tg_id, first_name: winner.first_name, total_score: winner.total_score };
             }
         }
         else if (action === 'reset') {
+            // Simpan pemenang terakhir ke history jika belum tersimpan
             const topUser = await db.query(`SELECT first_name, total_score, tg_id FROM users ORDER BY total_score DESC LIMIT 1`);
             if (topUser.rows.length > 0) gameState.previousWinner = topUser.rows[0];
             await db.query(`UPDATE users SET total_score = 0`);
-            gameState.claimToken = null;
-            gameState.claimTokenUsed = false;
         }
         else if (action === 'delete') {
             gameState.previousWinner = null;
-            gameState.claimToken = null;
-            gameState.claimTokenUsed = false;
+            winHistory = [];
             await db.query(`DELETE FROM users`);
         }
         res.json({ success: true });
