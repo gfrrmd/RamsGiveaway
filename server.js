@@ -20,7 +20,7 @@ const AC = {
     MAX_SCORE_PER_MINUTE : 400,
     VELOCITY_WINDOW_MS   : 60000,
     MAX_STRIKES          : 3,
-    BAN_DURATION_MS      : 3000,  // 3 detik
+    BAN_DURATION_MS      : 3000,
 };
 
 const userSyncData = {};
@@ -48,27 +48,20 @@ function stdDev(arr) {
 function checkAntiCheat(tg_id, taps, now) {
     const ud = getOrInitUser(tg_id, now);
 
-    // 1. BAN CHECK
     if (ud.bannedUntil > now) {
         const s = Math.ceil((ud.bannedUntil - now) / 1000);
         return { blocked: true, reason: `Anti-cheat: banned sementara, coba lagi dalam ${s}s.` };
     }
-
-    // 2. MAX TAPS PER REQUEST
     if (taps > AC.MAX_TAPS_PER_REQUEST) {
         if (++ud.strikes >= AC.MAX_STRIKES) ud.bannedUntil = now + AC.BAN_DURATION_MS;
         return { blocked: true, reason: `Anti-cheat: terlalu banyak tap dalam 1 request.` };
     }
-
-    // 3. INSTANT TPS
     const elapsed = Math.max((now - ud.lastSync) / 1000, 0.1);
     const tps = taps / elapsed;
     if (tps > AC.MAX_TPS_INSTANT) {
         if (++ud.strikes >= AC.MAX_STRIKES) ud.bannedUntil = now + AC.BAN_DURATION_MS;
         return { blocked: true, reason: `Anti-cheat: kecepatan tap abnormal (${tps.toFixed(1)} TPS).` };
     }
-
-    // 4. VELOCITY WINDOW (score/menit)
     if (now - ud.windowStart > AC.VELOCITY_WINDOW_MS) {
         ud.scoreThisWindow = 0;
         ud.windowStart = now;
@@ -78,8 +71,6 @@ function checkAntiCheat(tg_id, taps, now) {
         if (++ud.strikes >= AC.MAX_STRIKES) ud.bannedUntil = now + AC.BAN_DURATION_MS;
         return { blocked: true, reason: `Anti-cheat: skor per menit terlalu tinggi.` };
     }
-
-    // 5. SYNC-LEVEL BURST PATTERN
     ud.syncHistory.push({ time: now, taps, elapsed });
     if (ud.syncHistory.length > 8) ud.syncHistory.shift();
     if (ud.syncHistory.length >= 6) {
@@ -92,7 +83,6 @@ function checkAntiCheat(tg_id, taps, now) {
             return { blocked: true, reason: `Anti-cheat: pola sync otomatis terdeteksi.` };
         }
     }
-
     ud.lastSync = now;
     return { blocked: false };
 }
@@ -101,14 +91,16 @@ function checkAntiCheat(tg_id, taps, now) {
 let winHistory = [];
 
 let gameState = {
-    isActive  : false,
-    endTime   : null,
-    winnerLink: '',
+    isActive      : false,
+    startTime     : null,   // ← BARU: waktu mulai terjadwal
+    endTime       : null,
+    winnerLink    : '',
     previousWinner: null,
-    sessionId : 0
+    sessionId     : 0
 };
 
-let autoEndTimer = null;
+let autoEndTimer   = null;
+let autoStartTimer = null;  // ← BARU
 
 async function endSession() {
     if (!gameState.isActive) return;
@@ -153,10 +145,37 @@ function scheduleAutoEnd() {
     console.log(`[autoEnd] Sesi otomatis berakhir dalam ${Math.round(delay/1000)}s`);
 }
 
+// ─── BARU: jadwalkan auto-start ───────────────────────────────────────────────
+async function scheduleAutoStart() {
+    if (autoStartTimer) { clearTimeout(autoStartTimer); autoStartTimer = null; }
+    if (!gameState.startTime || gameState.isActive) return;
+    const delay = new Date(gameState.startTime).getTime() - Date.now();
+    if (delay <= 0) {
+        // Sudah lewat, mulai langsung
+        await startSession();
+        return;
+    }
+    autoStartTimer = setTimeout(async () => { await startSession(); }, delay);
+    console.log(`[autoStart] Sesi otomatis dimulai dalam ${Math.round(delay/1000)}s`);
+}
+
+async function startSession() {
+    if (gameState.isActive) return;
+    await db.query(`UPDATE users SET total_score = 0`);
+    Object.keys(userSyncData).forEach(k => delete userSyncData[k]);
+    gameState.isActive  = true;
+    gameState.sessionId += 1;
+    gameState.startTime = null; // sudah dimulai, hapus jadwal
+    scheduleAutoEnd();
+    console.log(`[autoStart] Sesi #${gameState.sessionId} dimulai otomatis.`);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── API STATE ───────────────────────────────────────────────────────────────
 app.get('/api/state', (req, res) => {
     res.json({
         isActive      : gameState.isActive,
+        startTime     : gameState.startTime,   // ← expose ke client
         endTime       : gameState.endTime,
         previousWinner: gameState.previousWinner,
         sessionId     : gameState.sessionId
@@ -185,6 +204,14 @@ app.get('/api/me/:tg_id', async (req, res) => {
             SELECT rank, total_score FROM R WHERE tg_id = $1;
         `, [req.params.tg_id]);
         res.json(r.rows[0] || { rank: '-', total_score: 0 });
+    } catch { res.status(500).json({ error: 'Server Error' }); }
+});
+
+// ─── API LEADERBOARD COUNT (cek apakah ada data) ─────────────────────────────
+app.get('/api/leaderboard/count', async (req, res) => {
+    try {
+        const r = await db.query(`SELECT COUNT(*) as count FROM users WHERE total_score > 0`);
+        res.json({ count: parseInt(r.rows[0].count) });
     } catch { res.status(500).json({ error: 'Server Error' }); }
 });
 
@@ -244,17 +271,21 @@ const isAdmin = (req, res, next) => {
 
 // ─── API ADMIN ACTION ─────────────────────────────────────────────────────────
 app.post('/api/admin/action', isAdmin, async (req, res) => {
-    const { action, endTime, winnerLink } = req.body;
+    const { action, startTime, endTime, winnerLink } = req.body;
     try {
         if (action === 'update_config') {
+            if (startTime  !== undefined) gameState.startTime  = startTime;
             if (endTime    !== undefined) gameState.endTime    = endTime;
             if (winnerLink !== undefined) gameState.winnerLink = winnerLink;
             scheduleAutoEnd();
+            await scheduleAutoStart();
         }
         else if (action === 'start') {
+            if (autoStartTimer) { clearTimeout(autoStartTimer); autoStartTimer = null; }
             await db.query(`UPDATE users SET total_score = 0`);
             Object.keys(userSyncData).forEach(k => delete userSyncData[k]);
             gameState.isActive  = true;
+            gameState.startTime = null;
             gameState.sessionId += 1;
             if (endTime    !== undefined) gameState.endTime    = endTime;
             if (winnerLink !== undefined) gameState.winnerLink = winnerLink;
@@ -262,6 +293,14 @@ app.post('/api/admin/action', isAdmin, async (req, res) => {
         }
         else if (action === 'end') {
             await endSession();
+        }
+        else if (action === 'schedule') {
+            // Jadwalkan sesi mendatang tanpa langsung mulai
+            if (autoStartTimer) { clearTimeout(autoStartTimer); autoStartTimer = null; }
+            if (startTime  !== undefined) gameState.startTime  = startTime;
+            if (endTime    !== undefined) gameState.endTime    = endTime;
+            if (winnerLink !== undefined) gameState.winnerLink = winnerLink;
+            await scheduleAutoStart();
         }
         else if (action === 'reset') {
             const top = await db.query(`SELECT first_name, total_score, tg_id FROM users ORDER BY total_score DESC LIMIT 1`);
